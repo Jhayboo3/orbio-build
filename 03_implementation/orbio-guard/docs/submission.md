@@ -38,8 +38,12 @@ metadata-only audit trail.
 - Live or reproducible localhost dashboard.
 - Pitch video no longer than three minutes.
 - Technical walkthrough no longer than three minutes.
-- Architecture diagram and screenshots.
+- Architecture diagram and synthetic screenshots. These are now available under
+  `docs/architecture.md` and `docs/assets/`.
 - Installation, deployment, security, demo, limitations, and troubleshooting docs.
+
+Timed scripts are ready in `docs/pitch-script.md` and
+`docs/technical-walkthrough.md`; final narrated video files are not yet recorded.
 
 ## Release gate
 

@@ -38,7 +38,10 @@ async function loadDashboard(includeRemote) {
 }
 
 function render(snapshot) {
-  elements.systemLabel.textContent = "Guard online · local only";
+  elements.systemLabel.textContent =
+    snapshot.mode === "demo"
+      ? "Demo mode · mock upstream"
+      : "Guard online · local only";
   elements.updatedAt.textContent = new Date(snapshot.generatedAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",

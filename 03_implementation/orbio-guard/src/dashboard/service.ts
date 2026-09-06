@@ -27,6 +27,7 @@ export interface DashboardSnapshot {
     tokenFingerprint: string;
   }>;
   generatedAt: string;
+  mode: "demo" | "live";
   key: {
     configured: boolean;
     fingerprint?: string;
@@ -110,6 +111,7 @@ export class DashboardService {
       activity: state.ledger.slice(-80).reverse(),
       agents,
       generatedAt: new Date().toISOString(),
+      mode: this.config.displayMode,
       key: keyStatus.configured
         ? {
             configured: true,
@@ -126,7 +128,21 @@ export class DashboardService {
       },
     };
 
-    if (includeRemote) {
+    if (includeRemote && this.config.displayMode === "demo") {
+      snapshot.remote = {
+        balanceUsd: 100,
+        claimedUsd: 100,
+        spentUsd: 0.35,
+        wallets: ["0xDemo…Guard"],
+      };
+      snapshot.key = {
+        ...snapshot.key,
+        remoteCreatedAt: snapshot.generatedAt,
+        remoteHasKey: true,
+        remoteLastUsedAt: snapshot.generatedAt,
+        remotePrefix: "sk-orbio-demo",
+      };
+    } else if (includeRemote) {
       await this.attachRemote(snapshot);
     }
 

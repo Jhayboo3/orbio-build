@@ -46,11 +46,13 @@ const environmentSchema = z.object({
   ORBIO_GUARD_STALE_RESERVATION_POLICY: z
     .enum(["confirm", "release"])
     .default("confirm"),
+  ORBIO_GUARD_MODE: z.enum(["live", "demo"]).default("live"),
   ORBIO_GUARD_STATE_DIR: z.string().min(1).optional(),
 });
 
 export interface GuardConfig {
   defaultReservationMicroUsd: string;
+  displayMode: "demo" | "live";
   host: string;
   maxBodyBytes: number;
   mcpEndpoint: URL;
@@ -75,6 +77,7 @@ export function loadConfig(
     defaultReservationMicroUsd: parseUsdToMicroUsd(
       parsed.ORBIO_GUARD_DEFAULT_RESERVATION_USD,
     ),
+    displayMode: parsed.ORBIO_GUARD_MODE,
     host: parsed.ORBIO_GUARD_HOST,
     maxBodyBytes: parsed.ORBIO_GUARD_MAX_BODY_BYTES,
     mcpEndpoint: new URL(parsed.ORBIO_GUARD_MCP_ENDPOINT),

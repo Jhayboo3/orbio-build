@@ -53,6 +53,7 @@ export async function createMockDemo(): Promise<MockDemoRuntime> {
   );
   const config: GuardConfig = {
     defaultReservationMicroUsd: "150000",
+    displayMode: "demo",
     host: "127.0.0.1",
     maxBodyBytes: 1_048_576,
     mcpEndpoint: new URL("https://www.orbio.so/api/mcp"),

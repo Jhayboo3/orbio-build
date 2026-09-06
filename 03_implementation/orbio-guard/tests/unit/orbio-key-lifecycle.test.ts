@@ -56,6 +56,7 @@ async function createSetup(hasKey: boolean) {
   const stateDirectory = await mkdtemp(join(tmpdir(), "orbio-key-life-"));
   const config: GuardConfig = {
     defaultReservationMicroUsd: "250000",
+    displayMode: "live",
     host: "127.0.0.1",
     maxBodyBytes: 1_048_576,
     mcpEndpoint: new URL("https://www.orbio.so/api/mcp"),

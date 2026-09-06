@@ -41,11 +41,31 @@ describe("DashboardService", () => {
     expect(JSON.stringify(snapshot)).not.toContain(created.token);
     expect(snapshot.agents[0]).not.toHaveProperty("tokenHash");
   });
+
+  it("uses clearly labeled synthetic remote data in demo mode", async () => {
+    const stateDirectory = await mkdtemp(join(tmpdir(), "orbio-dashboard-"));
+    const config = createConfig(stateDirectory);
+    config.displayMode = "demo";
+    const snapshot = await new DashboardService(config).snapshot(true);
+
+    expect(snapshot).toMatchObject({
+      mode: "demo",
+      remote: {
+        balanceUsd: 100,
+        wallets: ["0xDemo…Guard"],
+      },
+      key: {
+        remoteHasKey: true,
+        remotePrefix: "sk-orbio-demo",
+      },
+    });
+  });
 });
 
 function createConfig(stateDirectory: string): GuardConfig {
   return {
     defaultReservationMicroUsd: "250000",
+    displayMode: "live",
     host: "127.0.0.1",
     maxBodyBytes: 1_048_576,
     mcpEndpoint: new URL("https://www.orbio.so/api/mcp"),

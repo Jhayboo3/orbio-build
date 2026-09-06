@@ -328,6 +328,7 @@ async function setupProxy(
   const config: GuardConfig = {
     defaultReservationMicroUsd:
       overrides.defaultReservationMicroUsd ?? "250000",
+    displayMode: "live",
     host: "127.0.0.1",
     maxBodyBytes: overrides.maxBodyBytes ?? 1_048_576,
     mcpEndpoint: new URL("https://www.orbio.so/api/mcp"),
