@@ -20,3 +20,63 @@ export function extractCostMicroUsd(responseBody: string): string | undefined {
     return undefined;
   }
 }
+
+export function extractStreamCostMicroUsd(streamBody: string): string | undefined {
+  let latestCost: number | undefined;
+
+  for (const line of streamBody.split(/\r?\n/)) {
+    if (!line.startsWith("data:")) {
+      continue;
+    }
+
+    const data = line.slice(5).trim();
+    if (!data || data === "[DONE]") {
+      continue;
+    }
+
+    try {
+      const cost = findUsageCost(JSON.parse(data));
+      if (cost !== undefined) {
+        latestCost = cost;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return latestCost === undefined
+    ? undefined
+    : Math.round(latestCost * 1_000_000).toString();
+}
+
+function findUsageCost(value: unknown): number | undefined {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const cost = findUsageCost(item);
+      if (cost !== undefined) {
+        return cost;
+      }
+    }
+    return undefined;
+  }
+
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const object = value as Record<string, unknown>;
+  if (object.usage && typeof object.usage === "object") {
+    const usageCost = (object.usage as Record<string, unknown>).cost;
+    if (typeof usageCost === "number" && usageCost >= 0) {
+      return usageCost;
+    }
+  }
+
+  for (const nested of Object.values(object)) {
+    const cost = findUsageCost(nested);
+    if (cost !== undefined) {
+      return cost;
+    }
+  }
+  return undefined;
+}

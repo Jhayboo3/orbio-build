@@ -7,6 +7,8 @@ budget enforcement, an upstream-key vault, a local OpenAI-compatible proxy, cred
 redaction, MCP-backed key creation, a metadata-only activity ledger, and automated
 tests. The same local server now provides the responsive landing page and live Guard
 dashboard.
+Codex/Claude setup generation, multi-protocol streaming, and the repeatable two-agent
+mock demo are also available.
 
 Start with `implementation-orbio.md`, which contains the full phased implementation
 plan, guides, test strategy, quality gates, seven-day schedule, and release checklist.

@@ -22,17 +22,23 @@ and release criteria.
 - **Phase 3 - In progress:** the owner-only key vault and MCP-backed guarded
   create/rotate/revoke commands are implemented. Live key creation is verified; live
   rotation and revoke remain intentionally unexecuted.
-- **Phase 4 - Proxy core complete:** local-only non-streaming chat completions enforce
-  Guard identity and policy, reserve spend, isolate the Orbio key, reconcile
-  provider-reported cost, and release unpriced failures. Streaming and crash recovery
-  remain deferred. A live request reached the gateway but returned `402` because the
+- **Phase 4 - Proxy core complete:** local-only Chat Completions, Responses, and
+  Anthropic Messages enforce Guard identity and policy, reserve spend, isolate the Orbio
+  key, reconcile buffered/SSE provider cost, and release unpriced failures. Crash
+  recovery remains deferred. A live request reached the gateway but returned `402` because the
   connected account currently has no spendable credit.
 - **Ledger - Core complete:** metadata-only agent, policy, budget, request, upstream,
   and key events are persisted without prompts, responses, or raw credentials.
 - **Phase 6 - Dashboard complete:** responsive landing/dashboard views show masked live
   Orbio status, Guard agents, budgets, key health, and metadata-only activity. Remote
   refresh is non-interactive and degrades safely.
-- **Validation:** typecheck, forty-one automated tests, production build, desktop/mobile
+- **Phase 5 - Setup core complete:** policy-validated configuration is generated for
+  Codex Responses providers and Claude Code gateways. Cursor remains guided/manual where
+  its installed build exposes a base-URL override.
+- **Phase 7 - Demo core complete:** a deterministic two-agent mock run proves one agent
+  can trip its budget while the rest of the fleet continues, with an optional held
+  dashboard for recording.
+- **Validation:** typecheck, forty-eight automated tests, production build, desktop/mobile
   Playwright rendering with zero browser errors or horizontal overflow,
   mock-upstream proxy integration, live OAuth discovery, authenticated reconnect,
   read-only status calls, isolated CLI workflow, and npm audit currently pass.

@@ -7,6 +7,7 @@ import { OAuthStateStore } from "./auth/oauth-store.js";
 import { GuardControlService } from "./control/service.js";
 import { formatMicroUsd, parseUsdToMicroUsd } from "./domain/money.js";
 import { LedgerService } from "./domain/ledger.js";
+import { createMockDemo } from "./demo/mock-demo.js";
 import {
   discoverOrbioOAuth,
   probeOrbioMcpAuthentication,
@@ -27,6 +28,10 @@ import { redactValue } from "./shared/redaction.js";
 import { GuardStateStore } from "./state/store.js";
 import { UpstreamKeyStore } from "./upstream/key-store.js";
 import { startProxyServer } from "./proxy/server.js";
+import {
+  generateSetupGuide,
+  type SetupTarget,
+} from "./setup/generator.js";
 
 const program = new Command();
 
@@ -445,6 +450,68 @@ program
     }
   });
 
+program
+  .command("setup <target>")
+  .description("Generate Guard configuration for codex, claude, or cursor.")
+  .requiredOption("--agent <agentId>", "Guard agent identity to configure.")
+  .requiredOption("--model <model>", "Provider model ID allowed by the agent policy.")
+  .action(
+    async (
+      target: string,
+      options: { agent: string; model: string },
+    ) => {
+      if (!isSetupTarget(target)) {
+        throw new Error("Setup target must be codex, claude, or cursor.");
+      }
+      const config = loadConfig();
+      const agent = await controlService().getAgent(options.agent);
+      const guide = generateSetupGuide({
+        agent,
+        baseUrl: new URL(`http://${config.host}:${config.port}`),
+        model: options.model,
+        target,
+      });
+
+      console.log(`Orbio Guard setup for ${guide.target}`);
+      for (const note of guide.notes) {
+        console.log(`- ${note}`);
+      }
+      console.log("\nConfiguration:\n");
+      console.log(guide.snippet);
+    },
+  );
+
+program
+  .command("demo")
+  .description("Run the repeatable two-agent Guard demo with a mock upstream.")
+  .option("--hold", "Keep the dashboard open until interrupted.")
+  .option("--json", "Print machine-readable results.")
+  .action(async ({ hold, json }: { hold?: boolean; json?: boolean }) => {
+    const demo = await createMockDemo();
+    try {
+      const result = await demo.run();
+      if (json) {
+        process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      } else {
+        console.log("Orbio Guard demo (mock upstream)");
+        for (const step of result.steps) {
+          console.log(`${step.agent}: HTTP ${step.status} — ${step.expected}`);
+        }
+        console.log(`Dashboard: ${result.dashboardUrl}`);
+      }
+
+      if (hold) {
+        console.log("Press Ctrl+C to stop the demo.");
+        await new Promise<void>((resolve) => {
+          process.once("SIGINT", resolve);
+          process.once("SIGTERM", resolve);
+        });
+      }
+    } finally {
+      await demo.close();
+    }
+  });
+
 program.parseAsync().catch((error: unknown) => {
   if (error instanceof ZodError) {
     console.error("Invalid Orbio Guard configuration:");
@@ -532,4 +599,8 @@ function safeAgentView(agent: {
     createdAt: agent.createdAt,
     updatedAt: agent.updatedAt,
   };
+}
+
+function isSetupTarget(value: string): value is SetupTarget {
+  return value === "codex" || value === "claude" || value === "cursor";
 }

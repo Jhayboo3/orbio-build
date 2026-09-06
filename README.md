@@ -5,7 +5,8 @@ credit-control / multi-agent spend layer on top of Orbio's MCP).
 
 - **Location:** `/Users/admin/Developer/orbio build`
 - **Self-contained:** Yes. Move the whole folder anywhere; nothing outside is required.
-- **Status:** Research complete · core proxy, key lifecycle, ledger, and dashboard active in
+- **Status:** Research complete · proxy, key lifecycle, ledger, dashboard, agent setup,
+  and demo automation active in
   `03_implementation/orbio-guard/`.
 
 ## Contents

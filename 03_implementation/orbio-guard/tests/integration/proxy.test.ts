@@ -80,7 +80,7 @@ describe("OpenAI-compatible proxy", () => {
     );
   });
 
-  it("rejects invalid Guard tokens and streaming before upstream access", async () => {
+  it("rejects invalid Guard tokens before upstream access", async () => {
     let upstreamCalls = 0;
     const upstream = await startUpstream((_request, response) => {
       upstreamCalls += 1;
@@ -92,6 +92,89 @@ describe("OpenAI-compatible proxy", () => {
 
     const unauthorized = await sendChat(setup.proxyUrl, "invalid", "prompt");
     expect(unauthorized.status).toBe(401);
+    expect(upstreamCalls).toBe(0);
+  });
+
+  it("forwards Responses API and Anthropic Messages requests", async () => {
+    const received: Array<{
+      anthropicVersion?: string;
+      authorization?: string;
+      path?: string;
+    }> = [];
+    const upstream = await startUpstream((request, response) => {
+      received.push({
+        ...(typeof request.headers["anthropic-version"] === "string"
+          ? { anthropicVersion: request.headers["anthropic-version"] }
+          : {}),
+        ...(request.headers.authorization
+          ? { authorization: request.headers.authorization }
+          : {}),
+        ...(request.url ? { path: request.url } : {}),
+      });
+      response.setHeader("content-type", "application/json");
+      response.end(JSON.stringify({ id: "protocol-test", usage: { cost: 0.01 } }));
+    });
+    upstreamServers.push(upstream.server);
+    const setup = await setupProxy(upstream.baseUrl, {
+      allowedModels: ["openai/*", "anthropic/*"],
+    });
+    runtimes.push(setup.runtime);
+
+    const responses = await fetch(`${setup.proxyUrl}/v1/responses`, {
+      body: JSON.stringify({
+        model: "openai/gpt-test",
+        input: "hello",
+      }),
+      headers: {
+        authorization: `Bearer ${setup.agentToken}`,
+        "content-type": "application/json",
+      },
+      method: "POST",
+    });
+    expect(responses.status).toBe(200);
+
+    const messages = await fetch(`${setup.proxyUrl}/v1/messages`, {
+      body: JSON.stringify({
+        model: "anthropic/claude-test",
+        messages: [{ role: "user", content: "hello" }],
+      }),
+      headers: {
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+        "x-api-key": setup.agentToken,
+      },
+      method: "POST",
+    });
+    expect(messages.status).toBe(200);
+    expect(received).toEqual([
+      {
+        authorization: "Bearer or-test-upstream-secret",
+        path: "/v1/responses",
+      },
+      {
+        anthropicVersion: "2023-06-01",
+        authorization: "Bearer or-test-upstream-secret",
+        path: "/v1/messages",
+      },
+    ]);
+  });
+
+  it("streams SSE responses and reconciles final usage cost", async () => {
+    const upstream = await startUpstream((_request, response) => {
+      response.statusCode = 200;
+      response.setHeader("content-type", "text/event-stream");
+      response.write('data: {"type":"response.output_text.delta","delta":"O"}\n\n');
+      response.write(
+        'data: {"type":"response.completed","response":{"usage":{"cost":0.02}}}\n\n',
+      );
+      response.end("data: [DONE]\n\n");
+    });
+    upstreamServers.push(upstream.server);
+    const setup = await setupProxy(upstream.baseUrl, {
+      dailyBudgetMicroUsd: "100000",
+      defaultReservationMicroUsd: "50000",
+    });
+    runtimes.push(setup.runtime);
 
     const streaming = await fetch(`${setup.proxyUrl}/v1/chat/completions`, {
       body: JSON.stringify({
@@ -105,11 +188,13 @@ describe("OpenAI-compatible proxy", () => {
       },
       method: "POST",
     });
-    expect(streaming.status).toBe(400);
-    await expect(streaming.json()).resolves.toMatchObject({
-      error: { code: "STREAMING_NOT_SUPPORTED" },
+    expect(streaming.status).toBe(200);
+    expect(streaming.headers.get("content-type")).toContain("text/event-stream");
+    expect(await streaming.text()).toContain("response.completed");
+    expect(await setup.budgets.usage(setup.agentId)).toMatchObject({
+      confirmedMicroUsd: "20000",
+      reservedMicroUsd: "0",
     });
-    expect(upstreamCalls).toBe(0);
   });
 
   it("releases reservations after an unpriced upstream failure", async () => {
@@ -211,6 +296,7 @@ describe("OpenAI-compatible proxy", () => {
 async function setupProxy(
   upstreamBaseUrl: URL,
   overrides: {
+    allowedModels?: string[];
     dailyBudgetMicroUsd?: string;
     defaultReservationMicroUsd?: string;
     maxBodyBytes?: number;
@@ -221,7 +307,7 @@ async function setupProxy(
   const store = new GuardStateStore(stateDirectory);
   const control = new GuardControlService(store);
   const created = await control.addAgent({
-    allowedModels: ["openai/*"],
+    allowedModels: overrides.allowedModels ?? ["openai/*"],
     dailyBudgetMicroUsd: overrides.dailyBudgetMicroUsd ?? "1000000",
     name: "Proxy test agent",
   });

@@ -26,6 +26,8 @@ npm run dev -- key status
 npm run dev -- serve
 npm run dev -- activity
 npm run test:ui
+npm run dev -- setup codex --agent <id> --model <model>
+npm run dev -- demo --hold
 ```
 
 For machine-readable diagnostics:
@@ -48,17 +50,19 @@ npm run dev -- doctor --json
   serialized reservation/confirm/release accounting.
 - Unified request authorizer with stable policy failure codes.
 - Owner-only upstream-key vault with fingerprint-only status output.
-- Local OpenAI-compatible non-streaming chat completions proxy with upstream key
-  isolation, conservative reservations, usage-cost reconciliation, timeout handling,
-  and OpenAI-style Guard errors.
+- OpenAI Chat Completions, Responses, and Anthropic Messages proxying with buffered and
+  SSE streaming support, upstream key isolation, conservative reservations, usage-cost
+  reconciliation, timeout handling, and compatible Guard errors.
 - MCP-backed safe key creation/rotation and confirmed live key creation.
 - Metadata-only activity ledger for agent, policy, budget, request, upstream, and key
   events.
 - Responsive landing page and live paper-and-ink dashboard with secret-safe APIs.
+- Policy-validated setup guides for Codex, Claude Code, and guided Cursor configuration.
+- Deterministic two-agent mock demo with optional held dashboard for recording.
 - Typed boundary and sanitized fixture for the authenticated five-tool runtime contract,
   plus detection of future tool-list changes.
 - Recursive credential redaction.
 - Initial unit tests.
 
-Live key rotation/revocation, streaming, crash reconciliation, balance top-up, and
-agent-tool setup automation remain in later phases.
+Live key rotation/revocation, crash reconciliation, balance top-up, automatic Cursor
+configuration, and public deployment remain in later phases.

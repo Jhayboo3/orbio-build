@@ -1,8 +1,12 @@
-# OpenAI-compatible proxy
+# Agent-compatible proxy
 
-The MVP proxy accepts non-streaming OpenAI-compatible chat completion requests at:
+The proxy accepts OpenAI and Anthropic-compatible requests at:
 
-`http://127.0.0.1:4318/v1/chat/completions`
+- `POST /v1/chat/completions`
+- `POST /v1/responses`
+- `POST /v1/messages`
+
+Buffered JSON and SSE streaming responses are supported.
 
 It binds to loopback by default. Do not expose the proxy to a network interface until
 transport authentication, TLS, and deployment-specific access controls are added.
@@ -79,25 +83,33 @@ const response = await client.chat.completions.create({
 });
 ```
 
+The Responses API uses the same base URL and Guard token:
+
+```ts
+const response = await client.responses.create({
+  model: "openai/gpt-6",
+  input: "Say hello",
+});
+```
+
 ## Enforcement behavior
 
-1. Validate endpoint, JSON body, model, and non-streaming mode.
+1. Validate endpoint, JSON body, model, and protocol shape.
 2. Authenticate the Guard token.
 3. Enforce agent status, model allow-list, and request ceiling.
 4. Reserve spend atomically against the UTC daily budget.
 5. Load the upstream key only inside the proxy process.
 6. Forward the request with the upstream key replacing the Guard credential.
-7. Confirm provider-reported `usage.cost`, or conservatively confirm the reservation
-   when a successful response does not include cost.
-8. Release the reservation after an unpriced upstream failure or cancellation.
+7. Forward buffered responses or stream SSE chunks to the client.
+8. Confirm provider-reported `usage.cost`, including cost found in final SSE events, or
+   conservatively confirm the reservation when a successful response omits cost.
+9. Release the reservation after an unpriced upstream failure or cancellation.
 
 Guard converts provider-reported USD cost to integer micro-dollars for local
 accounting.
 
 ## Current MVP limitations
 
-- Only `POST /v1/chat/completions` is supported.
-- Streaming requests are rejected with `STREAMING_NOT_SUPPORTED`.
 - Default reservation is `$0.25` when the agent has no per-request ceiling. Configure
   `ORBIO_GUARD_DEFAULT_RESERVATION_USD` conservatively for the expected workload.
 - Request bodies default to a 1 MiB maximum.
@@ -114,5 +126,4 @@ accounting.
 - `REQUEST_LIMIT_EXCEEDED` — reservation exceeds per-request policy.
 - `DAILY_BUDGET_EXCEEDED` — confirmed plus reserved spend exceeds the UTC limit.
 - `INVALID_REQUEST` / `BODY_TOO_LARGE` — malformed or oversized request.
-- `STREAMING_NOT_SUPPORTED` — streaming is deferred.
 - `UPSTREAM_TIMEOUT` / `UPSTREAM_ERROR` — provider request failed.

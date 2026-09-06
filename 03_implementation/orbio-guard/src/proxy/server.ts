@@ -1,16 +1,30 @@
 import { randomUUID } from "node:crypto";
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type Server,
+  type ServerResponse,
+} from "node:http";
 import { z } from "zod";
-import { GuardRequestAuthorizer, GuardAuthorizationError } from "../control/authorizer.js";
-import { GuardControlService, InvalidAgentTokenError } from "../control/service.js";
+import type { GuardConfig } from "../config/schema.js";
+import {
+  GuardAuthorizationError,
+  GuardRequestAuthorizer,
+} from "../control/authorizer.js";
+import {
+  GuardControlService,
+  InvalidAgentTokenError,
+} from "../control/service.js";
+import { serveDashboardRequest } from "../dashboard/http.js";
+import { DashboardService } from "../dashboard/service.js";
 import { BudgetService } from "../domain/budget.js";
 import { LedgerService } from "../domain/ledger.js";
-import type { GuardConfig } from "../config/schema.js";
 import { GuardStateStore } from "../state/store.js";
 import { UpstreamKeyStore } from "../upstream/key-store.js";
-import { extractCostMicroUsd } from "./usage.js";
-import { DashboardService } from "../dashboard/service.js";
-import { serveDashboardRequest } from "../dashboard/http.js";
+import {
+  extractCostMicroUsd,
+  extractStreamCostMicroUsd,
+} from "./usage.js";
 
 const chatCompletionSchema = z
   .object({
@@ -19,6 +33,34 @@ const chatCompletionSchema = z
     stream: z.boolean().optional(),
   })
   .loose();
+
+const responsesSchema = z
+  .object({
+    model: z.string().min(1),
+    input: z.unknown(),
+    stream: z.boolean().optional(),
+  })
+  .loose();
+
+const anthropicMessagesSchema = z
+  .object({
+    model: z.string().min(1),
+    messages: z.array(z.unknown()).min(1),
+    stream: z.boolean().optional(),
+  })
+  .loose();
+
+const PROXY_ROUTES = new Map([
+  [
+    "/v1/chat/completions",
+    { schema: chatCompletionSchema, upstreamPath: "chat/completions" },
+  ],
+  ["/v1/responses", { schema: responsesSchema, upstreamPath: "responses" }],
+  [
+    "/v1/messages",
+    { schema: anthropicMessagesSchema, upstreamPath: "messages" },
+  ],
+]);
 
 export interface ProxyRuntime {
   close(): Promise<void>;
@@ -43,10 +85,10 @@ export async function startProxyServer(
       budgets,
       config,
       control,
+      dashboard,
       fetchImplementation,
       keyStore,
       ledger,
-      dashboard,
       request,
       response,
     });
@@ -98,25 +140,18 @@ async function handleRequest(input: {
       return;
     }
 
-    if (request.method !== "POST" || request.url !== "/v1/chat/completions") {
+    const route = PROXY_ROUTES.get(requestUrl.pathname);
+    if (request.method !== "POST" || !route) {
       sendError(response, 404, "NOT_FOUND", "Endpoint not found.");
       return;
     }
 
-    const agentToken = bearerToken(request.headers.authorization);
+    const agentToken = bearerToken(
+      request.headers.authorization,
+      request.headers["x-api-key"],
+    );
     const bodyText = await readBody(request, input.config.maxBodyBytes);
-    const body = chatCompletionSchema.parse(JSON.parse(bodyText));
-
-    if (body.stream) {
-      sendError(
-        response,
-        400,
-        "STREAMING_NOT_SUPPORTED",
-        "Streaming is not supported in the current MVP proxy.",
-      );
-      return;
-    }
-
+    const body = route.schema.parse(JSON.parse(bodyText));
     const agent = await input.control.authenticateAgent(agentToken);
     const estimatedCostMicroUsd =
       agent.maxRequestMicroUsd ?? input.config.defaultReservationMicroUsd;
@@ -134,33 +169,39 @@ async function handleRequest(input: {
     );
     const abortOnClientClose = () => abortController.abort();
     request.once("aborted", abortOnClientClose);
+    response.once("close", abortOnClientClose);
 
     try {
       const upstreamResponse = await input.fetchImplementation(
-        new URL("chat/completions", withTrailingSlash(credentials.baseUrl)),
+        new URL(route.upstreamPath, withTrailingSlash(credentials.baseUrl)),
         {
           body: bodyText,
-          headers: {
-            accept: "application/json",
-            authorization: `Bearer ${credentials.key}`,
-            "content-type": "application/json",
-          },
+          headers: upstreamHeaders(request, credentials.key),
           method: "POST",
           signal: abortController.signal,
         },
       );
-      const upstreamBody = await upstreamResponse.text();
-      const confirmedCost = extractCostMicroUsd(upstreamBody);
 
-      if (confirmedCost !== undefined) {
-        await input.budgets.confirm(authorization.reservation.id, confirmedCost);
-      } else if (upstreamResponse.ok) {
-        await input.budgets.confirm(
-          authorization.reservation.id,
-          authorization.reservation.amountMicroUsd,
-        );
-      } else {
-        await input.budgets.release(authorization.reservation.id);
+      if (body.stream && upstreamResponse.ok && upstreamResponse.body) {
+        await streamUpstreamResponse({
+          authorization,
+          budgets: input.budgets,
+          response,
+          upstreamResponse,
+        });
+        return;
+      }
+
+      const upstreamBody = await upstreamResponse.text();
+      await reconcileBufferedResponse(
+        input.budgets,
+        authorization.reservation.id,
+        authorization.reservation.amountMicroUsd,
+        upstreamResponse,
+        upstreamBody,
+      );
+
+      if (!upstreamResponse.ok) {
         await input.ledger.record({
           agentId: authorization.agent.id,
           httpStatus: upstreamResponse.status,
@@ -170,15 +211,8 @@ async function handleRequest(input: {
         });
       }
 
+      copyResponseHeaders(response, upstreamResponse);
       response.statusCode = upstreamResponse.status;
-      response.setHeader(
-        "content-type",
-        upstreamResponse.headers.get("content-type") ?? "application/json",
-      );
-      const upstreamRequestId = upstreamResponse.headers.get("x-request-id");
-      if (upstreamRequestId) {
-        response.setHeader("x-request-id", upstreamRequestId);
-      }
       response.end(upstreamBody);
     } catch (error) {
       await input.budgets.release(authorization.reservation.id);
@@ -199,6 +233,7 @@ async function handleRequest(input: {
     } finally {
       clearTimeout(timeout);
       request.off("aborted", abortOnClientClose);
+      response.off("close", abortOnClientClose);
     }
   } catch (error) {
     if (error instanceof InvalidAgentTokenError) {
@@ -229,12 +264,94 @@ async function handleRequest(input: {
   }
 }
 
-function bearerToken(header: string | undefined): string {
-  const match = header?.match(/^Bearer\s+(.+)$/i);
-  if (!match?.[1]) {
+async function streamUpstreamResponse(input: {
+  authorization: Awaited<ReturnType<GuardRequestAuthorizer["authorize"]>>;
+  budgets: BudgetService;
+  response: ServerResponse;
+  upstreamResponse: Response;
+}): Promise<void> {
+  copyResponseHeaders(input.response, input.upstreamResponse);
+  input.response.statusCode = input.upstreamResponse.status;
+  let captured = "";
+  const decoder = new TextDecoder();
+
+  for await (const chunk of input.upstreamResponse.body!) {
+    if (!input.response.write(chunk)) {
+      await new Promise<void>((resolve) => input.response.once("drain", resolve));
+    }
+    captured += decoder.decode(chunk, { stream: true });
+    if (captured.length > 2_000_000) {
+      captured = captured.slice(-2_000_000);
+    }
+  }
+  captured += decoder.decode();
+
+  await input.budgets.confirm(
+    input.authorization.reservation.id,
+    extractStreamCostMicroUsd(captured) ??
+      input.authorization.reservation.amountMicroUsd,
+  );
+  input.response.end();
+}
+
+async function reconcileBufferedResponse(
+  budgets: BudgetService,
+  reservationId: string,
+  reservationAmountMicroUsd: string,
+  upstreamResponse: Response,
+  upstreamBody: string,
+): Promise<void> {
+  const confirmedCost = extractCostMicroUsd(upstreamBody);
+  if (confirmedCost !== undefined) {
+    await budgets.confirm(reservationId, confirmedCost);
+  } else if (upstreamResponse.ok) {
+    await budgets.confirm(reservationId, reservationAmountMicroUsd);
+  } else {
+    await budgets.release(reservationId);
+  }
+}
+
+function upstreamHeaders(request: IncomingMessage, key: string): HeadersInit {
+  const headers: Record<string, string> = {
+    accept: request.headers.accept ?? "application/json",
+    authorization: `Bearer ${key}`,
+    "content-type": "application/json",
+  };
+  const anthropicVersion = request.headers["anthropic-version"];
+  if (typeof anthropicVersion === "string") {
+    headers["anthropic-version"] = anthropicVersion;
+  }
+  return headers;
+}
+
+function copyResponseHeaders(
+  response: ServerResponse,
+  upstreamResponse: Response,
+): void {
+  response.setHeader(
+    "content-type",
+    upstreamResponse.headers.get("content-type") ?? "application/json",
+  );
+  const upstreamRequestId = upstreamResponse.headers.get("x-request-id");
+  if (upstreamRequestId) {
+    response.setHeader("x-request-id", upstreamRequestId);
+  }
+  const cacheControl = upstreamResponse.headers.get("cache-control");
+  if (cacheControl) {
+    response.setHeader("cache-control", cacheControl);
+  }
+}
+
+function bearerToken(
+  authorization: string | undefined,
+  apiKey: string | string[] | undefined,
+): string {
+  const match = authorization?.match(/^Bearer\s+(.+)$/i);
+  const token = match?.[1] ?? (Array.isArray(apiKey) ? apiKey[0] : apiKey);
+  if (!token) {
     throw new InvalidAgentTokenError();
   }
-  return match[1];
+  return token;
 }
 
 async function readBody(request: IncomingMessage, maxBytes: number): Promise<string> {
