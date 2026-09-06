@@ -19,6 +19,7 @@ const elements = {
 };
 
 let remoteSnapshot = null;
+let remoteKeySnapshot = null;
 
 async function loadDashboard(includeRemote) {
   try {
@@ -27,8 +28,14 @@ async function loadDashboard(includeRemote) {
     });
     if (!response.ok) throw new Error(`Dashboard API returned ${response.status}`);
     const snapshot = await response.json();
-    if (includeRemote) remoteSnapshot = snapshot.remote;
+    if (includeRemote) {
+      remoteSnapshot = snapshot.remote;
+      remoteKeySnapshot = snapshot.key;
+    }
     if (!includeRemote && remoteSnapshot) snapshot.remote = remoteSnapshot;
+    if (!includeRemote && remoteKeySnapshot) {
+      snapshot.key = { ...snapshot.key, ...remoteKeySnapshot };
+    }
     render(snapshot);
   } catch (error) {
     elements.systemLabel.textContent = "Guard data unavailable";

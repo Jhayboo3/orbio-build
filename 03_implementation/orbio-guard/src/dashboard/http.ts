@@ -5,6 +5,7 @@ import type { DashboardService } from "./service.js";
 const ASSETS = new Map([
   ["/", { file: "index.html", type: "text/html; charset=utf-8" }],
   ["/dashboard", { file: "dashboard.html", type: "text/html; charset=utf-8" }],
+  ["/technical", { file: "technical.html", type: "text/html; charset=utf-8" }],
   ["/assets/styles.css", { file: "styles.css", type: "text/css; charset=utf-8" }],
   [
     "/assets/dashboard.js",

@@ -1,0 +1,13 @@
+Orbio Guard creates a local trust boundary between agent tools and the account-level Orbio credential.
+
+Every request starts with a Guard identity. Status, model policy, per-request ceiling, and daily budget are evaluated before the upstream key is loaded. The budget service reserves integer micro-dollars under a cross-process file lock, preventing concurrent requests from racing past the limit.
+
+Account access uses Orbio MCP with protected-resource discovery, authorization code plus PKCE, dynamic registration, and refresh-token storage. The single gateway key remains inside an owner-only vault. Key creation uses a recovery response so the one-time secret is not lost if parsing or persistence fails.
+
+The proxy supports OpenAI Chat Completions, the Responses API used by Codex, and Anthropic Messages for Claude Code. Buffered and streamed responses share one enforcement path. Guard reads provider usage cost from JSON or final SSE events, then confirms the reservation before downstream completion.
+
+The ledger records agent IDs, models, decisions, cost, key fingerprints, and upstream errors. It never stores prompts, model responses, authorization headers, or raw credentials.
+
+State writes use schema validation, temporary files, atomic rename, and stale-lock recovery. After a crash, old reservations are conservatively confirmed by default because the provider may still have billed the request.
+
+The release gate covers fifty-three automated tests, desktop and mobile browser rendering, dependency audit, protocol streaming, Docker build, non-root runtime, and GitHub Actions. Orbio funds the key. Guard controls the work.

@@ -25,5 +25,7 @@ Generated video outputs:
 
 - `orbio-guard-demo.mp4` - silent dashboard sequence.
 - `orbio-guard-demo-narrated.mp4` - synthetic Samantha-voice narration draft.
+- `orbio-guard-pitch-draft.mp4` - longer narrated product-pitch walkthrough.
+- `orbio-guard-technical-draft.mp4` - narrated engineering walkthrough.
 
 Do not replace them with screenshots containing live secrets or complete wallet data.

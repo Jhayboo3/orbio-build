@@ -29,6 +29,26 @@ The automated narrated version uses the macOS Samantha system voice and the conc
 in `docs/demo-narration.txt`. Treat it as a submission draft; replace it with the
 builder's voice if personal narration is preferred.
 
+Generate the longer synthetic narrated pitch draft with:
+
+```bash
+npm run video:pitch
+```
+
+Output: `docs/assets/orbio-guard-pitch-draft.mp4`. The walkthrough moves from the landing
+page through the control thesis, executes the four-step demo, focuses on the ledger, and
+returns to the closing product statement.
+
+Generate the synthetic narrated technical walkthrough with:
+
+```bash
+npm run video:technical
+```
+
+Output: `docs/assets/orbio-guard-technical-draft.mp4`. It walks through trust boundaries,
+OAuth and key custody, atomic accounting, protocol support, recovery, ledger privacy,
+and verification.
+
 ## Shot sequence
 
 1. **Opening dashboard:** two active agents, `$100` synthetic account balance, protected

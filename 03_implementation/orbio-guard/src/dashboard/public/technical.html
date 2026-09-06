@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Technical Walkthrough — Orbio Guard</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="site-header shell dashboard-header">
+      <a class="brand" href="/">
+        <span class="brand-orb" aria-hidden="true"></span>
+        <span>Orbio Guard</span>
+      </a>
+      <div class="system-state"><span class="live-dot"></span><span>Technical walkthrough · synthetic data</span></div>
+    </header>
+
+    <main class="technical shell">
+      <section class="technical-hero">
+        <p class="eyebrow">Architecture and trust boundaries</p>
+        <h1>Under the guard.</h1>
+        <p>
+          One local control plane separates untrusted agent tools from the account-level
+          Orbio credential, enforcing policy before provider access and reconciling cost
+          afterward.
+        </p>
+      </section>
+
+      <section class="technical-section" id="request-path">
+        <div class="technical-heading">
+          <p class="eyebrow">01 · Request path</p>
+          <h2>Identity before key access.</h2>
+        </div>
+        <div class="architecture-flow">
+          <div><span>Agents</span><strong>Codex<br />Claude<br />SDKs</strong></div>
+          <i>→</i>
+          <div><span>Guard</span><strong>Identity<br />Policy<br />Budget</strong></div>
+          <i>→</i>
+          <div><span>Vault</span><strong>One protected<br />Orbio key</strong></div>
+          <i>→</i>
+          <div><span>Gateway</span><strong>Models and<br />usage cost</strong></div>
+        </div>
+      </section>
+
+      <section class="technical-cards" id="oauth">
+        <article>
+          <p class="eyebrow">02 · OAuth and MCP</p>
+          <h2>Standards-based account control.</h2>
+          <ul>
+            <li>Protected-resource discovery</li>
+            <li>Authorization code and PKCE</li>
+            <li>Dynamic client registration</li>
+            <li>Refresh-token persistence</li>
+            <li>Authenticated tool-contract capture</li>
+          </ul>
+        </article>
+        <article class="technical-dark">
+          <p class="eyebrow">Credential boundary</p>
+          <div class="key-orb"><span></span></div>
+          <strong>Agents never receive the upstream key.</strong>
+          <small>Owner-only storage · atomic recovery · fingerprint-only UI</small>
+        </article>
+      </section>
+
+      <section class="technical-section" id="budget">
+        <div class="technical-heading">
+          <p class="eyebrow">03 · Atomic accounting</p>
+          <h2>Reserve. Forward. Reconcile.</h2>
+        </div>
+        <div class="technical-steps">
+          <article><span>1</span><h3>Reserve</h3><p>Confirmed plus in-flight spend is checked under a cross-process lock.</p></article>
+          <article><span>2</span><h3>Forward</h3><p>The vault key is loaded only after identity and policy succeed.</p></article>
+          <article><span>3</span><h3>Confirm</h3><p>Provider usage replaces the reservation using integer micro-dollars.</p></article>
+        </div>
+      </section>
+
+      <section class="technical-section" id="protocols">
+        <div class="technical-heading">
+          <p class="eyebrow">04 · Protocol surface</p>
+          <h2>One policy path. Three APIs.</h2>
+        </div>
+        <div class="protocol-grid">
+          <article><code>POST /v1/chat/completions</code><strong>OpenAI-compatible apps</strong></article>
+          <article><code>POST /v1/responses</code><strong>Codex custom provider</strong></article>
+          <article><code>POST /v1/messages</code><strong>Claude Code gateway</strong></article>
+          <article><code>text/event-stream</code><strong>SSE forwarding and final-cost reconciliation</strong></article>
+        </div>
+      </section>
+
+      <section class="technical-cards" id="recovery">
+        <article class="technical-dark">
+          <p class="eyebrow">05 · Fail closed</p>
+          <h2>Crashes do not reopen the budget.</h2>
+          <p>
+            Stale reservations are conservatively confirmed by default because an
+            interrupted provider request may still have been billed.
+          </p>
+        </article>
+        <article>
+          <p class="eyebrow">Metadata only</p>
+          <h2>Audit without prompt logging.</h2>
+          <ul>
+            <li>Agent and request IDs</li>
+            <li>Model and policy decision</li>
+            <li>Reserved and confirmed cost</li>
+            <li>Key events by fingerprint</li>
+            <li>No prompts, responses, or secrets</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="technical-section verification-section" id="verification">
+        <div class="technical-heading">
+          <p class="eyebrow">06 · Verification</p>
+          <h2>Tested from domain rule to container.</h2>
+        </div>
+        <div class="verification-grid">
+          <div><strong>53</strong><span>automated tests</span></div>
+          <div><strong>3</strong><span>agent protocols</span></div>
+          <div><strong>2</strong><span>responsive UI widths</span></div>
+          <div><strong>0</strong><span>audit vulnerabilities</span></div>
+        </div>
+        <p class="technical-close">Orbio funds the key. Guard controls the work.</p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -49,9 +49,23 @@ try {
     });
     page.on("pageerror", (error) => browserErrors.push(error.message));
     await page.route("**/api/dashboard**", async (route) => {
+      const requestUrl = new URL(route.request().url());
       const response = await fetch(`${baseUrl}/api/dashboard?live=0`);
+      const body = await response.json();
+      if (requestUrl.searchParams.get("live") !== "0") {
+        body.remote = {
+          balanceUsd: 100,
+          wallets: ["0xDemo…Guard"],
+        };
+        body.key = {
+          ...body.key,
+          remoteHasKey: true,
+          remoteLastUsedAt: body.generatedAt,
+          remotePrefix: "sk-orbio-demo",
+        };
+      }
       await route.fulfill({
-        body: await response.text(),
+        body: JSON.stringify(body),
         contentType: "application/json",
         status: response.status,
       });
@@ -65,6 +79,14 @@ try {
       throw new Error(`Landing page overflows at ${viewport.width}px.`);
     }
 
+    await page.goto(`${baseUrl}/technical`, { waitUntil: "networkidle" });
+    if ((await page.locator("h1").textContent())?.includes("Under the guard") !== true) {
+      throw new Error("Technical page heading did not render.");
+    }
+    if ((await page.evaluate(() => document.documentElement.scrollWidth)) > viewport.width) {
+      throw new Error(`Technical page overflows at ${viewport.width}px.`);
+    }
+
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
     await page.waitForSelector("#agents-table tr");
     if ((await page.locator("#agents-table tr").count()) !== 1) {
@@ -75,6 +97,10 @@ try {
     }
     if (browserErrors.length) {
       throw new Error(`Dashboard browser errors: ${browserErrors.join(" | ")}`);
+    }
+    await page.waitForTimeout(4_500);
+    if ((await page.locator("#key-remote").textContent()) !== "Active") {
+      throw new Error("Local refresh replaced the last remote key snapshot.");
     }
     await page.close();
   }

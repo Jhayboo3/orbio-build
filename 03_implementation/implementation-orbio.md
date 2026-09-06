@@ -50,11 +50,13 @@ and release criteria.
   read-only status calls, isolated CLI workflow, npm audit, Docker build, non-root
   container startup, dashboard serving, and health/readiness smoke checks pass.
 - **Submission blockers:** the connected account has no spendable inference credit, the
-  repository is intentionally private, and full-length personal pitch/technical videos
-  are not yet recorded. Verified silent and synthetic-narrated demo MP4s are ready.
+  repository is intentionally private, and live inference cannot complete until credit
+  is available. Submission-length synthetic pitch and technical videos are ready;
+  personal re-narration is optional.
 - **Submission materials prepared:** synthetic desktop/mobile screenshots, architecture
   diagrams, timed pitch and technical scripts, troubleshooting, security, deployment,
   and final submission guides are complete.
+- **Release candidate:** `v0.1.0-rc.1` prepared on September 6, 2026.
 
 ## 1. MVP outcome
 

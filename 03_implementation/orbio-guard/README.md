@@ -50,6 +50,12 @@ Synthetic narrated draft:
 [Orbio Guard narrated demo MP4](docs/assets/orbio-guard-demo-narrated.mp4).
 See `docs/video-storyboard.md` for narration and editing cues.
 
+Submission-length drafts:
+
+- [Narrated product pitch](docs/assets/orbio-guard-pitch-draft.mp4) - 77.6 seconds.
+- [Narrated technical walkthrough](docs/assets/orbio-guard-technical-draft.mp4) -
+  1 minute 43.6 seconds.
+
 ## Supported Clients
 
 Guard exposes one local base URL with a shared policy path for:
@@ -198,3 +204,5 @@ The same release gate and Docker build pass in GitHub Actions.
 - The repository remains private by operator request and must be made public deliberately
   before a public Build Week submission.
 - The supplied deployment is localhost-oriented, not a public multi-tenant service.
+
+Current release candidate: `v0.1.0-rc.1`, prepared September 6, 2026.

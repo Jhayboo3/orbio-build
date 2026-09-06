@@ -45,8 +45,15 @@ metadata-only audit trail.
 Timed scripts are ready in `docs/pitch-script.md` and
 `docs/technical-walkthrough.md`. A verified silent H.264 screen-capture draft is
 available at `docs/assets/orbio-guard-demo.mp4`. A 27-second synthetic narrated H.264/AAC
-draft is available at `docs/assets/orbio-guard-demo-narrated.mp4`; full-length personal
-pitch and technical narration are not yet recorded.
+draft is available at `docs/assets/orbio-guard-demo-narrated.mp4`.
+
+Submission-length synthetic narrated drafts are also ready:
+
+- `docs/assets/orbio-guard-pitch-draft.mp4` - 77.6-second product pitch.
+- `docs/assets/orbio-guard-technical-draft.mp4` - 1-minute 43.6-second technical
+  walkthrough.
+
+Personal re-narration remains optional if the builder wants their own voice.
 
 ## Release gate
 

@@ -1,6 +1,6 @@
 {
   "name": "orbio-guard",
-  "version": "0.1.0",
+  "version": "0.1.0-rc.1",
   "private": true,
   "description": "Local-first credit controls for Orbio-powered AI agents.",
   "type": "module",
@@ -18,6 +18,8 @@
     "assets:capture": "npm run build && node scripts/capture-submission-assets.mjs",
     "video:record": "npm run build && node scripts/record-demo-video.mjs",
     "video:narrate": "npm run video:record && node scripts/narrate-demo-video.mjs",
+    "video:pitch": "npm run build && node scripts/record-pitch-video.mjs",
+    "video:technical": "npm run build && node scripts/record-technical-video.mjs",
     "release:check": "npm run typecheck && npm test && npm run build && npm run test:ui && npm audit --audit-level=high"
   },
   "engines": {

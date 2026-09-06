@@ -1,0 +1,11 @@
+Orbio gives an agent a key that can fund its own inference. But when one account powers several agents, repositories, or teammates, the operator needs more control.
+
+Orbio Guard is a local credit-control plane. Every agent receives a separate Guard identity, daily budget, model policy, and kill switch, while the real Orbio key stays protected inside an owner-only vault.
+
+Here, Alpha and Beta share one account. Alpha completes a request. Beta completes one request, then its next reservation exceeds its daily limit. Guard returns a budget error before the upstream key is touched. Alpha continues working, so one constrained agent cannot stop the fleet.
+
+The dashboard shows account credit, key health, agent policies, confirmed spend, and every control decision. The ledger stores metadata only: never prompts, model responses, or credentials.
+
+Guard supports OpenAI Chat Completions, the Responses API used by Codex, Anthropic Messages for Claude Code, and streamed usage reconciliation. OAuth uses PKCE, state writes are locked across processes, and interrupted reservations recover conservatively after a crash.
+
+Orbio funds the key. Guard controls the work. One wallet. Many agents. Safe spend.
