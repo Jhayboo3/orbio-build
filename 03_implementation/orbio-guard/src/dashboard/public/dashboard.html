@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard — Orbio Guard</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script src="/assets/dashboard.js" defer></script>
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="site-header shell dashboard-header">
+      <a class="brand" href="/">
+        <span class="brand-orb" aria-hidden="true"></span>
+        <span>Orbio Guard</span>
+      </a>
+      <div class="system-state">
+        <span class="live-dot"></span>
+        <span id="system-label">Loading guard state</span>
+      </div>
+    </header>
+
+    <main class="dashboard shell">
+      <section class="dashboard-title">
+        <div>
+          <p class="eyebrow">Fleet control</p>
+          <h1>Guard dashboard</h1>
+        </div>
+        <div class="updated-at">
+          <span>Last sync</span>
+          <strong id="updated-at">—</strong>
+        </div>
+      </section>
+
+      <section class="metric-grid" aria-label="Account overview">
+        <article class="metric-card metric-primary">
+          <span>Available Orbio credit</span>
+          <strong id="balance-usd">—</strong>
+          <small id="wallet-label">Connecting to Orbio MCP</small>
+        </article>
+        <article class="metric-card">
+          <span>Agents</span>
+          <strong id="agent-count">—</strong>
+          <small id="agent-detail">Active identities</small>
+        </article>
+        <article class="metric-card">
+          <span>Confirmed today</span>
+          <strong id="confirmed-today">—</strong>
+          <small id="reserved-today">Reserved —</small>
+        </article>
+        <article class="metric-card">
+          <span>Upstream key</span>
+          <strong class="key-value" id="key-state">—</strong>
+          <small id="key-detail">Checking local vault</small>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="panel agents-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Policy surface</p>
+              <h2>Agents</h2>
+            </div>
+            <span class="panel-count" id="agents-badge">0 configured</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Agent</th>
+                  <th>Status</th>
+                  <th>Models</th>
+                  <th>Daily spend</th>
+                </tr>
+              </thead>
+              <tbody id="agents-table">
+                <tr><td colspan="4" class="empty-state">Loading agents…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <aside class="panel key-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Credential boundary</p>
+              <h2>Key health</h2>
+            </div>
+          </div>
+          <div class="key-orb" aria-hidden="true"><span></span></div>
+          <dl class="key-facts">
+            <div><dt>Local vault</dt><dd id="key-local">—</dd></div>
+            <div><dt>Remote state</dt><dd id="key-remote">—</dd></div>
+            <div><dt>Last used</dt><dd id="key-last-used">—</dd></div>
+            <div><dt>Fingerprint</dt><dd id="key-fingerprint">—</dd></div>
+          </dl>
+        </aside>
+
+        <article class="panel activity-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Metadata only</p>
+              <h2>Activity</h2>
+            </div>
+            <span class="panel-count">No prompts stored</span>
+          </div>
+          <ol class="activity-list" id="activity-list">
+            <li class="empty-state">Loading activity…</li>
+          </ol>
+        </article>
+
+        <aside class="demo-card">
+          <p class="eyebrow">Live control loop</p>
+          <h2>Budget trips.<br />Guard stops.<br />Fleet continues.</h2>
+          <div class="demo-flow">
+            <span>Request</span><i>→</i><span>Reserve</span><i>→</i><span>Enforce</span>
+          </div>
+          <p>
+            Every request receives a Guard ID, a policy decision, and an auditable
+            metadata event before the upstream key is touched.
+          </p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

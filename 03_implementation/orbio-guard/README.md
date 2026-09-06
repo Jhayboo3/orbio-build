@@ -25,6 +25,7 @@ npm run dev -- key create --label "Orbio Guard"
 npm run dev -- key status
 npm run dev -- serve
 npm run dev -- activity
+npm run test:ui
 ```
 
 For machine-readable diagnostics:
@@ -53,10 +54,11 @@ npm run dev -- doctor --json
 - MCP-backed safe key creation/rotation and confirmed live key creation.
 - Metadata-only activity ledger for agent, policy, budget, request, upstream, and key
   events.
+- Responsive landing page and live paper-and-ink dashboard with secret-safe APIs.
 - Typed boundary and sanitized fixture for the authenticated five-tool runtime contract,
   plus detection of future tool-list changes.
 - Recursive credential redaction.
 - Initial unit tests.
 
-Live key rotation/revocation, streaming, crash reconciliation, balance top-up, and the
-dashboard remain in later phases.
+Live key rotation/revocation, streaming, crash reconciliation, balance top-up, and
+agent-tool setup automation remain in later phases.

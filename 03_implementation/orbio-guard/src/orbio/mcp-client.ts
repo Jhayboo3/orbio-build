@@ -23,10 +23,18 @@ export interface OrbioMcpSession {
 
 type AuthorizationLauncher = (url: URL) => Promise<void>;
 
+export interface ConnectOrbioOptions {
+  interactive?: boolean;
+  launchAuthorization?: AuthorizationLauncher;
+}
+
 export async function connectOrbioMcp(
   config: GuardConfig,
-  launchAuthorization: AuthorizationLauncher = openAuthorizationUrl,
+  options: ConnectOrbioOptions = {},
 ): Promise<OrbioMcpSession> {
+  const interactive = options.interactive ?? true;
+  const launchAuthorization =
+    options.launchAuthorization ?? openAuthorizationUrl;
   const callbackUrl = new URL(
     `http://127.0.0.1:${config.oauthCallbackPort}/oauth/callback`,
   );
@@ -36,6 +44,11 @@ export async function connectOrbioMcp(
     store,
     callbackUrl,
     async (authorizationUrl) => {
+      if (!interactive) {
+        throw new Error(
+          "Orbio authentication is required. Run `orbio-guard auth` interactively.",
+        );
+      }
       await callbackListener.start();
       console.log("Opening Orbio authorization in your browser...");
       await launchAuthorization(authorizationUrl);

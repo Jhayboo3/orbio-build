@@ -407,9 +407,8 @@ program
   .action(async () => {
     const config = loadConfig();
     const runtime = await startProxyServer(config);
-    console.log(
-      `Orbio Guard listening on http://${config.host}:${config.port}/v1`,
-    );
+    console.log(`Orbio Guard dashboard: http://${config.host}:${config.port}/dashboard`);
+    console.log(`OpenAI-compatible base: http://${config.host}:${config.port}/v1`);
 
     await new Promise<void>((resolve) => {
       const stop = () => resolve();

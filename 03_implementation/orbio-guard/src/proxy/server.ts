@@ -9,6 +9,8 @@ import type { GuardConfig } from "../config/schema.js";
 import { GuardStateStore } from "../state/store.js";
 import { UpstreamKeyStore } from "../upstream/key-store.js";
 import { extractCostMicroUsd } from "./usage.js";
+import { DashboardService } from "../dashboard/service.js";
+import { serveDashboardRequest } from "../dashboard/http.js";
 
 const chatCompletionSchema = z
   .object({
@@ -33,8 +35,7 @@ export async function startProxyServer(
   const ledger = new LedgerService(stateStore);
   const authorizer = new GuardRequestAuthorizer(control, budgets, ledger);
   const keyStore = new UpstreamKeyStore(config.stateDirectory);
-
-  await keyStore.load();
+  const dashboard = new DashboardService(config, stateStore, keyStore);
 
   const server = createServer((request, response) => {
     void handleRequest({
@@ -45,6 +46,7 @@ export async function startProxyServer(
       fetchImplementation,
       keyStore,
       ledger,
+      dashboard,
       request,
       response,
     });
@@ -73,6 +75,7 @@ async function handleRequest(input: {
   budgets: BudgetService;
   config: GuardConfig;
   control: GuardControlService;
+  dashboard: DashboardService;
   fetchImplementation: typeof fetch;
   keyStore: UpstreamKeyStore;
   ledger: LedgerService;
@@ -84,6 +87,17 @@ async function handleRequest(input: {
   response.setHeader("x-orbio-guard-request-id", requestId);
 
   try {
+    const requestUrl = new URL(
+      request.url ?? "/",
+      `http://${input.config.host}:${input.config.port}`,
+    );
+    if (
+      request.method === "GET" &&
+      (await serveDashboardRequest(requestUrl, response, input.dashboard))
+    ) {
+      return;
+    }
+
     if (request.method !== "POST" || request.url !== "/v1/chat/completions") {
       sendError(response, 404, "NOT_FOUND", "Endpoint not found.");
       return;

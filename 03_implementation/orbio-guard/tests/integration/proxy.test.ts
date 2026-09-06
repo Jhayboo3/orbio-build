@@ -177,6 +177,35 @@ describe("OpenAI-compatible proxy", () => {
     });
     expect((await setup.budgets.usage(setup.agentId)).reservedMicroUsd).toBe("0");
   });
+
+  it("serves the landing page and secret-safe local dashboard API", async () => {
+    const upstream = await startUpstream((_request, response) => {
+      response.end(JSON.stringify({ choices: [], usage: { cost: 0 } }));
+    });
+    upstreamServers.push(upstream.server);
+    const setup = await setupProxy(upstream.baseUrl);
+    runtimes.push(setup.runtime);
+
+    const landing = await fetch(setup.proxyUrl);
+    expect(landing.status).toBe(200);
+    expect(landing.headers.get("content-security-policy")).toContain("default-src 'self'");
+    expect(await landing.text()).toContain("One wallet.");
+
+    const dashboard = await fetch(`${setup.proxyUrl}/dashboard`);
+    expect(dashboard.status).toBe(200);
+    expect(await dashboard.text()).toContain("Guard dashboard");
+
+    const api = await fetch(`${setup.proxyUrl}/api/dashboard?live=0`);
+    expect(api.status).toBe(200);
+    const bodyText = await api.text();
+    expect(bodyText).not.toContain(setup.agentToken);
+    expect(bodyText).not.toContain("or-test-upstream-secret");
+    const body = JSON.parse(bodyText);
+    expect(body.agents).toHaveLength(1);
+    expect(body.agents[0]).not.toHaveProperty("tokenHash");
+    expect(body.key).toMatchObject({ configured: true });
+    expect(body.summary).toMatchObject({ totalAgents: 1, activeAgents: 1 });
+  });
 });
 
 async function setupProxy(

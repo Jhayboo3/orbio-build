@@ -29,7 +29,11 @@ and release criteria.
   connected account currently has no spendable credit.
 - **Ledger - Core complete:** metadata-only agent, policy, budget, request, upstream,
   and key events are persisted without prompts, responses, or raw credentials.
-- **Validation:** typecheck, thirty-nine automated tests, production build,
+- **Phase 6 - Dashboard complete:** responsive landing/dashboard views show masked live
+  Orbio status, Guard agents, budgets, key health, and metadata-only activity. Remote
+  refresh is non-interactive and degrades safely.
+- **Validation:** typecheck, forty-one automated tests, production build, desktop/mobile
+  Playwright rendering with zero browser errors or horizontal overflow,
   mock-upstream proxy integration, live OAuth discovery, authenticated reconnect,
   read-only status calls, isolated CLI workflow, and npm audit currently pass.
 

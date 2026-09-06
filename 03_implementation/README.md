@@ -5,7 +5,8 @@ configuration, OAuth metadata discovery, an unauthenticated MCP probe, a typed
 authenticated Orbio boundary, runtime discovery, Guard agent identities, policy and
 budget enforcement, an upstream-key vault, a local OpenAI-compatible proxy, credential
 redaction, MCP-backed key creation, a metadata-only activity ledger, and automated
-tests.
+tests. The same local server now provides the responsive landing page and live Guard
+dashboard.
 
 Start with `implementation-orbio.md`, which contains the full phased implementation
 plan, guides, test strategy, quality gates, seven-day schedule, and release checklist.
