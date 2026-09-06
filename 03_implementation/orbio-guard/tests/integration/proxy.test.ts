@@ -290,6 +290,16 @@ describe("OpenAI-compatible proxy", () => {
     expect(body.agents[0]).not.toHaveProperty("tokenHash");
     expect(body.key).toMatchObject({ configured: true });
     expect(body.summary).toMatchObject({ totalAgents: 1, activeAgents: 1 });
+
+    const health = await fetch(`${setup.proxyUrl}/healthz`);
+    expect(health.status).toBe(200);
+    await expect(health.json()).resolves.toEqual({ status: "ok" });
+    const readiness = await fetch(`${setup.proxyUrl}/readyz`);
+    expect(readiness.status).toBe(200);
+    await expect(readiness.json()).resolves.toEqual({
+      status: "ready",
+      upstreamKeyConfigured: true,
+    });
   });
 });
 
@@ -321,11 +331,15 @@ async function setupProxy(
     host: "127.0.0.1",
     maxBodyBytes: overrides.maxBodyBytes ?? 1_048_576,
     mcpEndpoint: new URL("https://www.orbio.so/api/mcp"),
+    oauthCallbackBindHost: "127.0.0.1",
+    oauthCallbackHost: "127.0.0.1",
     oauthCallbackPort: 4319,
     oauthTimeoutMs: 180_000,
     port: 0,
     requestTimeoutMs: overrides.requestTimeoutMs ?? 2_000,
+    reservationTtlMs: 300_000,
     stateDirectory,
+    staleReservationPolicy: "confirm",
     upstreamBaseUrl,
   };
   const runtime = await startProxyServer(config);

@@ -9,6 +9,8 @@ tests. The same local server now provides the responsive landing page and live G
 dashboard.
 Codex/Claude setup generation, multi-protocol streaming, and the repeatable two-agent
 mock demo are also available.
+Crash-safe budget recovery, cross-process state locking, health endpoints, CI, and a
+non-root Docker image are included for release validation.
 
 Start with `implementation-orbio.md`, which contains the full phased implementation
 plan, guides, test strategy, quality gates, seven-day schedule, and release checklist.

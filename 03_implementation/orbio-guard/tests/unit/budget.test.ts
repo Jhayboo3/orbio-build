@@ -69,4 +69,57 @@ describe("BudgetService", () => {
       reservedMicroUsd: "0",
     });
   });
+
+  it("conservatively confirms stale reservations after a crash", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "orbio-budget-"));
+    let now = new Date("2026-09-06T12:00:00.000Z");
+    const store = new GuardStateStore(directory);
+    const service = new BudgetService(store, () => now);
+    await service.reserve({
+      agentId: "agent-1",
+      amountMicroUsd: "400000",
+      dailyLimitMicroUsd: "1000000",
+    });
+    now = new Date("2026-09-06T12:10:00.000Z");
+
+    await expect(
+      service.recoverStaleReservations({ maxAgeMs: 300_000, policy: "confirm" }),
+    ).resolves.toEqual({ amountMicroUsd: "400000", recovered: 1 });
+    expect(await service.usage("agent-1")).toMatchObject({
+      confirmedMicroUsd: "400000",
+      reservedMicroUsd: "0",
+    });
+    expect((await store.read()).ledger.at(-1)).toMatchObject({
+      reasonCode: "STALE_RESERVATION_CONFIRMED",
+      type: "RESERVATION_RECOVERED",
+    });
+  });
+
+  it("can release stale reservations while retaining fresh ones", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "orbio-budget-"));
+    let now = new Date("2026-09-06T12:00:00.000Z");
+    const service = new BudgetService(
+      new GuardStateStore(directory),
+      () => now,
+    );
+    await service.reserve({
+      agentId: "agent-1",
+      amountMicroUsd: "300000",
+      dailyLimitMicroUsd: "1000000",
+    });
+    now = new Date("2026-09-06T12:06:00.000Z");
+    await service.reserve({
+      agentId: "agent-1",
+      amountMicroUsd: "200000",
+      dailyLimitMicroUsd: "1000000",
+    });
+
+    await expect(
+      service.recoverStaleReservations({ maxAgeMs: 300_000, policy: "release" }),
+    ).resolves.toEqual({ amountMicroUsd: "300000", recovered: 1 });
+    expect(await service.usage("agent-1")).toMatchObject({
+      confirmedMicroUsd: "0",
+      reservedMicroUsd: "200000",
+    });
+  });
 });

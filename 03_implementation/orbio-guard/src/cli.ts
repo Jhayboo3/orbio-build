@@ -7,6 +7,7 @@ import { OAuthStateStore } from "./auth/oauth-store.js";
 import { GuardControlService } from "./control/service.js";
 import { formatMicroUsd, parseUsdToMicroUsd } from "./domain/money.js";
 import { LedgerService } from "./domain/ledger.js";
+import { BudgetService } from "./domain/budget.js";
 import { createMockDemo } from "./demo/mock-demo.js";
 import {
   discoverOrbioOAuth,
@@ -55,11 +56,15 @@ program
       config: {
         host: config.host,
         mcpEndpoint: config.mcpEndpoint.toString(),
+        oauthCallbackBindHost: config.oauthCallbackBindHost,
+        oauthCallbackHost: config.oauthCallbackHost,
         oauthCallbackPort: config.oauthCallbackPort,
         oauthTimeoutMs: config.oauthTimeoutMs,
         port: config.port,
         requestTimeoutMs: config.requestTimeoutMs,
+        reservationTtlMs: config.reservationTtlMs,
         stateDirectory: config.stateDirectory,
+        staleReservationPolicy: config.staleReservationPolicy,
       },
       oauth: discovery,
       publicDocumentedTools: PUBLIC_DOCUMENTED_ORBIO_TOOL_NAMES,
@@ -86,9 +91,19 @@ program
 program
   .command("auth")
   .description("Authenticate with Orbio and verify the live MCP tool contract.")
-  .action(async () => {
+  .option("--no-open", "Print the authorization URL instead of opening a browser.")
+  .action(async ({ open }: { open: boolean }) => {
     const config = loadConfig();
-    const session = await connectOrbioMcp(config);
+    const session = await connectOrbioMcp(
+      config,
+      open
+        ? {}
+        : {
+            launchAuthorization: async (url) => {
+              console.log(`Open this authorization URL:\n${url.toString()}`);
+            },
+          },
+    );
 
     try {
       const tools = await session.listTools();
@@ -322,6 +337,31 @@ policyCommand
       console.log(`Policy updated for ${agent.name}.`);
     },
   );
+
+const budgetCommand = program
+  .command("budget")
+  .description("Inspect and recover local budget reservations.");
+
+budgetCommand
+  .command("recover")
+  .description("Recover reservations left behind by interrupted requests.")
+  .option("--policy <policy>", "confirm or release")
+  .action(async ({ policy }: { policy?: string }) => {
+    const config = loadConfig();
+    const selectedPolicy = policy ?? config.staleReservationPolicy;
+    if (selectedPolicy !== "confirm" && selectedPolicy !== "release") {
+      throw new Error("Recovery policy must be confirm or release.");
+    }
+    const result = await new BudgetService(
+      new GuardStateStore(config.stateDirectory),
+    ).recoverStaleReservations({
+      maxAgeMs: config.reservationTtlMs,
+      policy: selectedPolicy,
+    });
+    console.log(
+      `Recovered ${result.recovered} reservation(s), $${formatMicroUsd(result.amountMicroUsd)} using ${selectedPolicy}.`,
+    );
+  });
 
 const keyCommand = program
   .command("key")

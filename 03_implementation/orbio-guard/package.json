@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
-    "test:ui": "npm run build && node tests/e2e/dashboard-render.mjs"
+    "test:ui": "npm run build && node tests/e2e/dashboard-render.mjs",
+    "release:check": "npm run typecheck && npm test && npm run build && npm run test:ui && npm audit --audit-level=high"
   },
   "engines": {
     "node": ">=22"

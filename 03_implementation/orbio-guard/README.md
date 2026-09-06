@@ -28,6 +28,8 @@ npm run dev -- activity
 npm run test:ui
 npm run dev -- setup codex --agent <id> --model <model>
 npm run dev -- demo --hold
+npm run dev -- budget recover
+npm run release:check
 ```
 
 For machine-readable diagnostics:
@@ -59,10 +61,13 @@ npm run dev -- doctor --json
 - Responsive landing page and live paper-and-ink dashboard with secret-safe APIs.
 - Policy-validated setup guides for Codex, Claude Code, and guided Cursor configuration.
 - Deterministic two-agent mock demo with optional held dashboard for recording.
+- Cross-process state locking and configurable stale-reservation recovery.
+- `/healthz` and key-aware `/readyz` endpoints.
+- Non-root Node 24 Docker image, localhost-only Compose profile, and GitHub Actions CI.
 - Typed boundary and sanitized fixture for the authenticated five-tool runtime contract,
   plus detection of future tool-list changes.
 - Recursive credential redaction.
 - Initial unit tests.
 
 Live key rotation/revocation, crash reconciliation, balance top-up, automatic Cursor
-configuration, and public deployment remain in later phases.
+configuration, available inference credit, and public submission remain outstanding.

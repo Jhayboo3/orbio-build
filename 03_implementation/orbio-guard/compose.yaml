@@ -1,0 +1,18 @@
+services:
+  guard:
+    build: .
+    environment:
+      ORBIO_GUARD_HOST: 0.0.0.0
+      ORBIO_GUARD_OAUTH_CALLBACK_BIND_HOST: 0.0.0.0
+      ORBIO_GUARD_OAUTH_CALLBACK_HOST: 127.0.0.1
+      ORBIO_GUARD_STATE_DIR: /home/node/.orbio-guard
+      ORBIO_GUARD_STALE_RESERVATION_POLICY: confirm
+    ports:
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:4319:4319"
+    restart: unless-stopped
+    volumes:
+      - orbio-guard-state:/home/node/.orbio-guard
+
+volumes:
+  orbio-guard-state:

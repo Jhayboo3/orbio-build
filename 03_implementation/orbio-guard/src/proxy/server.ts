@@ -79,6 +79,11 @@ export async function startProxyServer(
   const keyStore = new UpstreamKeyStore(config.stateDirectory);
   const dashboard = new DashboardService(config, stateStore, keyStore);
 
+  await budgets.recoverStaleReservations({
+    maxAgeMs: config.reservationTtlMs,
+    policy: config.staleReservationPolicy,
+  });
+
   const server = createServer((request, response) => {
     void handleRequest({
       authorizer,
@@ -133,6 +138,26 @@ async function handleRequest(input: {
       request.url ?? "/",
       `http://${input.config.host}:${input.config.port}`,
     );
+    if (request.method === "GET" && requestUrl.pathname === "/healthz") {
+      response.statusCode = 200;
+      response.setHeader("content-type", "application/json");
+      response.setHeader("cache-control", "no-store");
+      response.end(JSON.stringify({ status: "ok" }));
+      return;
+    }
+    if (request.method === "GET" && requestUrl.pathname === "/readyz") {
+      const keyStatus = await input.keyStore.status();
+      response.statusCode = keyStatus.configured ? 200 : 503;
+      response.setHeader("content-type", "application/json");
+      response.setHeader("cache-control", "no-store");
+      response.end(
+        JSON.stringify({
+          status: keyStatus.configured ? "ready" : "not_ready",
+          upstreamKeyConfigured: keyStatus.configured,
+        }),
+      );
+      return;
+    }
     if (
       request.method === "GET" &&
       (await serveDashboardRequest(requestUrl, response, input.dashboard))

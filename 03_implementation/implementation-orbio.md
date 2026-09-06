@@ -38,10 +38,19 @@ and release criteria.
 - **Phase 7 - Demo core complete:** a deterministic two-agent mock run proves one agent
   can trip its budget while the rest of the fleet continues, with an optional held
   dashboard for recording.
-- **Validation:** typecheck, forty-eight automated tests, production build, desktop/mobile
+- **Crash recovery complete:** state updates use a cross-process lock; startup recovers
+  stale reservations with conservative `confirm` behavior by default and optional
+  operator-directed release.
+- **Phase 8 - Packaging complete:** release checks, health/readiness endpoints, GitHub
+  Actions CI, a non-root Node 24 image, localhost-only Compose profile, security policy,
+  deployment guide, and submission checklist are implemented.
+- **Validation:** typecheck, fifty-one automated tests, production build, desktop/mobile
   Playwright rendering with zero browser errors or horizontal overflow,
   mock-upstream proxy integration, live OAuth discovery, authenticated reconnect,
-  read-only status calls, isolated CLI workflow, and npm audit currently pass.
+  read-only status calls, isolated CLI workflow, npm audit, Docker build, non-root
+  container startup, dashboard serving, and health/readiness smoke checks pass.
+- **Submission blockers:** the connected account has no spendable inference credit, the
+  repository is intentionally private, and pitch/technical videos are not yet recorded.
 
 ## 1. MVP outcome
 

@@ -39,6 +39,7 @@ export const ledgerEventSchema = z.object({
     "BUDGET_RESERVED",
     "SPEND_CONFIRMED",
     "RESERVATION_RELEASED",
+    "RESERVATION_RECOVERED",
     "REQUEST_ALLOWED",
     "REQUEST_BLOCKED",
     "UPSTREAM_ERROR",

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { GuardControlService } from "../../src/control/service.js";
 import { GuardStateStore } from "../../src/state/store.js";
+import { LedgerService } from "../../src/domain/ledger.js";
 
 describe("GuardStateStore and control service", () => {
   it("persists agents with owner-only permissions and no raw token", async () => {
@@ -35,5 +36,28 @@ describe("GuardStateStore and control service", () => {
 
     expect(rotated.token).not.toBe(created.token);
     expect(disabled.status).toBe("disabled");
+  });
+
+  it("serializes updates across separate store instances", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "orbio-state-"));
+    const ledgers = [
+      new LedgerService(new GuardStateStore(directory)),
+      new LedgerService(new GuardStateStore(directory)),
+    ];
+
+    await Promise.all(
+      Array.from({ length: 20 }, (_, index) =>
+        ledgers[index % ledgers.length]!.record({
+          reasonCode: `event-${index}`,
+          type: "UPSTREAM_ERROR",
+        }),
+      ),
+    );
+
+    const state = await new GuardStateStore(directory).read();
+    expect(state.ledger).toHaveLength(20);
+    expect(state.ledger.map((event) => event.reasonCode).sort()).toEqual(
+      Array.from({ length: 20 }, (_, index) => `event-${index}`).sort(),
+    );
   });
 });

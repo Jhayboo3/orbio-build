@@ -13,6 +13,11 @@ export interface BudgetReservation {
   id: string;
 }
 
+export interface ReservationRecoveryResult {
+  amountMicroUsd: string;
+  recovered: number;
+}
+
 export class BudgetService {
   constructor(
     private readonly store: GuardStateStore,
@@ -111,6 +116,53 @@ export class BudgetService {
         ) ?? 0n
       ).toString(),
     };
+  }
+
+  async recoverStaleReservations(input: {
+    maxAgeMs: number;
+    policy: "confirm" | "release";
+  }): Promise<ReservationRecoveryResult> {
+    return this.store.update((state) => {
+      const now = this.now();
+      let recovered = 0;
+      let amount = 0n;
+
+      for (const budget of state.budgets) {
+        const retained = [];
+        for (const reservation of budget.reservations) {
+          const age = now.getTime() - new Date(reservation.createdAt).getTime();
+          if (age < input.maxAgeMs) {
+            retained.push(reservation);
+            continue;
+          }
+
+          const reservationAmount = parseMicroUsd(reservation.amountMicroUsd);
+          recovered += 1;
+          amount += reservationAmount;
+          if (input.policy === "confirm") {
+            budget.confirmedMicroUsd = (
+              parseMicroUsd(budget.confirmedMicroUsd) + reservationAmount
+            ).toString();
+          }
+          appendLedgerEvent(
+            state,
+            {
+              agentId: budget.agentId,
+              amountMicroUsd: reservation.amountMicroUsd,
+              reasonCode:
+                input.policy === "confirm"
+                  ? "STALE_RESERVATION_CONFIRMED"
+                  : "STALE_RESERVATION_RELEASED",
+              type: "RESERVATION_RECOVERED",
+            },
+            now,
+          );
+        }
+        budget.reservations = retained;
+      }
+
+      return { amountMicroUsd: amount.toString(), recovered };
+    });
   }
 }
 

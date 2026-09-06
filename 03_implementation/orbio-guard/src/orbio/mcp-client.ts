@@ -36,7 +36,7 @@ export async function connectOrbioMcp(
   const launchAuthorization =
     options.launchAuthorization ?? openAuthorizationUrl;
   const callbackUrl = new URL(
-    `http://127.0.0.1:${config.oauthCallbackPort}/oauth/callback`,
+    `http://${config.oauthCallbackHost}:${config.oauthCallbackPort}/oauth/callback`,
   );
   const store = new OAuthStateStore(config.stateDirectory);
   let callbackListener: OAuthCallbackListener;
@@ -56,7 +56,7 @@ export async function connectOrbioMcp(
   );
   callbackListener = new OAuthCallbackListener(
     {
-      host: "127.0.0.1",
+      host: config.oauthCallbackBindHost,
       path: callbackUrl.pathname,
       port: config.oauthCallbackPort,
       timeoutMs: config.oauthTimeoutMs,

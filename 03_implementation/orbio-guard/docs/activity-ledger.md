@@ -12,6 +12,7 @@ npm run dev -- activity --limit 100 --json
 
 - Agent creation, status changes, token rotation, and policy updates.
 - Budget reservation, spend confirmation, and reservation release.
+- Stale reservation recovery with the chosen confirm/release reason code.
 - Allowed and blocked requests with model and stable reason code.
 - Upstream errors with HTTP status or timeout reason.
 - Key import, creation, rotation, and revocation with fingerprint only.

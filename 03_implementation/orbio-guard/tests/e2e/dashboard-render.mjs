@@ -20,11 +20,15 @@ const runtime = await startProxyServer({
   host: "127.0.0.1",
   maxBodyBytes: 1_048_576,
   mcpEndpoint: new URL("https://www.orbio.so/api/mcp"),
+  oauthCallbackBindHost: "127.0.0.1",
+  oauthCallbackHost: "127.0.0.1",
   oauthCallbackPort: 4319,
   oauthTimeoutMs: 180_000,
   port: 0,
   requestTimeoutMs: 15_000,
+  reservationTtlMs: 300_000,
   stateDirectory,
+  staleReservationPolicy: "confirm",
   upstreamBaseUrl: new URL("https://www.orbio.so/api/v1"),
 });
 const address = runtime.server.address();
