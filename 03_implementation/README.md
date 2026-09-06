@@ -3,7 +3,8 @@
 Implementation has started in `orbio-guard/`. The current scaffold includes validated
 configuration, OAuth metadata discovery, an unauthenticated MCP probe, a typed
 authenticated Orbio boundary, runtime discovery, Guard agent identities, policy and
-budget enforcement, credential redaction, and automated tests.
+budget enforcement, an upstream-key vault, a local OpenAI-compatible proxy, credential
+redaction, and automated tests.
 
 Start with `implementation-orbio.md`, which contains the full phased implementation
 plan, guides, test strategy, quality gates, seven-day schedule, and release checklist.

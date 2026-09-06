@@ -1,6 +1,7 @@
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
+import { parseUsdToMicroUsd } from "../domain/money.js";
 
 const DEFAULT_MCP_ENDPOINT = "https://www.orbio.so/api/mcp";
 
@@ -26,17 +27,28 @@ const environmentSchema = z.object({
     .min(30_000)
     .max(600_000)
     .default(180_000),
+  ORBIO_GUARD_UPSTREAM_BASE_URL: z.url().default("https://api.orbio.so/v1"),
+  ORBIO_GUARD_DEFAULT_RESERVATION_USD: z.string().default("0.25"),
+  ORBIO_GUARD_MAX_BODY_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1_024)
+    .max(10_485_760)
+    .default(1_048_576),
   ORBIO_GUARD_STATE_DIR: z.string().min(1).optional(),
 });
 
 export interface GuardConfig {
+  defaultReservationMicroUsd: string;
   host: string;
+  maxBodyBytes: number;
   mcpEndpoint: URL;
   oauthCallbackPort: number;
   oauthTimeoutMs: number;
   port: number;
   requestTimeoutMs: number;
   stateDirectory: string;
+  upstreamBaseUrl: URL;
 }
 
 export function loadConfig(
@@ -45,7 +57,11 @@ export function loadConfig(
   const parsed = environmentSchema.parse(environment);
 
   return {
+    defaultReservationMicroUsd: parseUsdToMicroUsd(
+      parsed.ORBIO_GUARD_DEFAULT_RESERVATION_USD,
+    ),
     host: parsed.ORBIO_GUARD_HOST,
+    maxBodyBytes: parsed.ORBIO_GUARD_MAX_BODY_BYTES,
     mcpEndpoint: new URL(parsed.ORBIO_GUARD_MCP_ENDPOINT),
     oauthCallbackPort: parsed.ORBIO_GUARD_OAUTH_CALLBACK_PORT,
     oauthTimeoutMs: parsed.ORBIO_GUARD_OAUTH_TIMEOUT_MS,
@@ -54,5 +70,6 @@ export function loadConfig(
     stateDirectory: parsed.ORBIO_GUARD_STATE_DIR
       ? resolve(parsed.ORBIO_GUARD_STATE_DIR)
       : join(homedir(), ".orbio-guard"),
+    upstreamBaseUrl: new URL(parsed.ORBIO_GUARD_UPSTREAM_BASE_URL),
   };
 }

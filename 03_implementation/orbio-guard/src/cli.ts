@@ -23,6 +23,8 @@ import {
 } from "./orbio/results.js";
 import { redactValue } from "./shared/redaction.js";
 import { GuardStateStore } from "./state/store.js";
+import { UpstreamKeyStore } from "./upstream/key-store.js";
+import { startProxyServer } from "./proxy/server.js";
 
 const program = new Command();
 
@@ -313,6 +315,72 @@ policyCommand
       console.log(`Policy updated for ${agent.name}.`);
     },
   );
+
+const keyCommand = program
+  .command("key")
+  .description("Manage the upstream Orbio gateway key owned by Guard.");
+
+keyCommand
+  .command("import")
+  .description("Store ORBIO_GUARD_UPSTREAM_KEY in the owner-only local key vault.")
+  .action(async () => {
+    const config = loadConfig();
+    const key = process.env.ORBIO_GUARD_UPSTREAM_KEY;
+    if (!key) {
+      throw new Error(
+        "Set ORBIO_GUARD_UPSTREAM_KEY for this command. The key is never accepted as a command-line argument.",
+      );
+    }
+
+    const store = new UpstreamKeyStore(config.stateDirectory);
+    await store.save(key, config.upstreamBaseUrl);
+    console.log(`Upstream key stored securely at ${store.filePath}.`);
+  });
+
+keyCommand
+  .command("status")
+  .option("--json", "Print machine-readable output.")
+  .action(async ({ json }: { json?: boolean }) => {
+    const config = loadConfig();
+    const status = await new UpstreamKeyStore(config.stateDirectory).status();
+    if (json) {
+      process.stdout.write(`${JSON.stringify(status, null, 2)}\n`);
+      return;
+    }
+
+    console.log(
+      status.configured
+        ? `Upstream key configured (${status.fingerprint}).`
+        : "No upstream key configured.",
+    );
+  });
+
+keyCommand
+  .command("clear")
+  .description("Remove the locally stored upstream key.")
+  .action(async () => {
+    const config = loadConfig();
+    await new UpstreamKeyStore(config.stateDirectory).clear();
+    console.log("Upstream key removed.");
+  });
+
+program
+  .command("serve")
+  .description("Start the local OpenAI-compatible Guard proxy.")
+  .action(async () => {
+    const config = loadConfig();
+    const runtime = await startProxyServer(config);
+    console.log(
+      `Orbio Guard listening on http://${config.host}:${config.port}/v1`,
+    );
+
+    await new Promise<void>((resolve) => {
+      const stop = () => resolve();
+      process.once("SIGINT", stop);
+      process.once("SIGTERM", stop);
+    });
+    await runtime.close();
+  });
 
 program.parseAsync().catch((error: unknown) => {
   if (error instanceof ZodError) {

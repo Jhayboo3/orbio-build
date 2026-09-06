@@ -20,6 +20,8 @@ npm run dev -- status
 npm run dev -- init
 npm run dev -- agent add --name "Demo" --daily-budget 5 --models "*"
 npm run dev -- agent list
+npm run dev -- key import
+npm run dev -- serve
 ```
 
 For machine-readable diagnostics:
@@ -41,10 +43,14 @@ npm run dev -- doctor --json
 - Daily budgets, per-request ceilings, model allow-lists, pause/disable controls, and
   serialized reservation/confirm/release accounting.
 - Unified request authorizer with stable policy failure codes.
+- Owner-only upstream-key vault with fingerprint-only status output.
+- Local OpenAI-compatible non-streaming chat completions proxy with upstream key
+  isolation, conservative reservations, usage-cost reconciliation, timeout handling,
+  and OpenAI-style Guard errors.
 - Typed boundary and sanitized fixture for the authenticated five-tool runtime contract,
   plus detection of future tool-list changes.
 - Recursive credential redaction.
 - Initial unit tests.
 
-Mutating Orbio tool-result capture, request proxying, spend ledger events, and dashboard
-work remain in later phases.
+Mutating Orbio tool-result capture, automatic key lifecycle, streaming, crash
+reconciliation, spend ledger events, and dashboard work remain in later phases.

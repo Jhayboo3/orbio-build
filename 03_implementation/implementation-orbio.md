@@ -18,9 +18,15 @@ and release criteria.
   credentials, model/status/request policies, UTC daily budgets, and serialized
   reservation/confirm/release accounting are implemented. Policy/spend ledger events
   remain for the proxy milestone.
-- **Validation:** typecheck, twenty-three unit tests, production build, live OAuth
-  discovery, authenticated reconnect, read-only status calls, isolated CLI workflow,
-  and npm audit currently pass.
+- **Phase 3 - In progress:** the owner-only manual upstream-key vault and safe import,
+  status, and clear commands are complete. MCP-backed create/rotate/revoke remains.
+- **Phase 4 - Proxy core complete:** local-only non-streaming chat completions enforce
+  Guard identity and policy, reserve spend, isolate the Orbio key, reconcile
+  provider-reported cost, and release unpriced failures. Streaming and crash recovery
+  remain deferred.
+- **Validation:** typecheck, thirty-one automated tests, production build,
+  mock-upstream proxy integration, live OAuth discovery, authenticated reconnect,
+  read-only status calls, isolated CLI workflow, and npm audit currently pass.
 
 ## 1. MVP outcome
 
