@@ -6,6 +6,7 @@ import { loadConfig } from "./config/schema.js";
 import { OAuthStateStore } from "./auth/oauth-store.js";
 import { GuardControlService } from "./control/service.js";
 import { formatMicroUsd, parseUsdToMicroUsd } from "./domain/money.js";
+import { LedgerService } from "./domain/ledger.js";
 import {
   discoverOrbioOAuth,
   probeOrbioMcpAuthentication,
@@ -16,6 +17,7 @@ import {
   PUBLIC_DOCUMENTED_ORBIO_TOOL_NAMES,
 } from "./orbio/types.js";
 import { connectOrbioMcp } from "./orbio/mcp-client.js";
+import { OrbioKeyLifecycleService } from "./orbio/key-lifecycle.js";
 import {
   orbioBalanceSchema,
   orbioKeyStatusSchema,
@@ -334,6 +336,13 @@ keyCommand
 
     const store = new UpstreamKeyStore(config.stateDirectory);
     await store.save(key, config.upstreamBaseUrl);
+    const status = await store.status();
+    if (status.configured) {
+      await new LedgerService(new GuardStateStore(config.stateDirectory)).record({
+        keyFingerprint: status.fingerprint,
+        type: "KEY_IMPORTED",
+      });
+    }
     console.log(`Upstream key stored securely at ${store.filePath}.`);
   });
 
@@ -364,6 +373,34 @@ keyCommand
     console.log("Upstream key removed.");
   });
 
+keyCommand
+  .command("create")
+  .description("Create and securely store the account Orbio key through MCP.")
+  .option("--label <label>", "Optional Orbio key label.", "Orbio Guard")
+  .option("--rotate", "Replace an existing account key.")
+  .action(async ({ label, rotate }: { label?: string; rotate?: boolean }) => {
+    const service = keyLifecycleService();
+    const result = await service.createOrRotate({
+      allowRotation: rotate ?? false,
+      ...(label ? { label } : {}),
+    });
+    console.log(
+      `${result.rotated ? "Orbio key rotated" : "Orbio key created"} and stored securely (${result.fingerprint}).`,
+    );
+  });
+
+keyCommand
+  .command("revoke")
+  .description("Revoke the account Orbio key and remove the local copy.")
+  .option("--yes", "Confirm the destructive operation.")
+  .action(async ({ yes }: { yes?: boolean }) => {
+    if (!yes) {
+      throw new Error("Re-run with --yes to revoke the account Orbio key.");
+    }
+    await keyLifecycleService().revoke();
+    console.log("Orbio key revoked and local copy removed.");
+  });
+
 program
   .command("serve")
   .description("Start the local OpenAI-compatible Guard proxy.")
@@ -380,6 +417,33 @@ program
       process.once("SIGTERM", stop);
     });
     await runtime.close();
+  });
+
+program
+  .command("activity")
+  .description("Show metadata-only Guard activity events.")
+  .option("--limit <count>", "Maximum events to return.", "50")
+  .option("--json", "Print machine-readable output.")
+  .action(async ({ json, limit }: { json?: boolean; limit: string }) => {
+    const count = Number.parseInt(limit, 10);
+    if (!Number.isInteger(count) || count < 1 || count > 1_000) {
+      throw new Error("Activity limit must be between 1 and 1000.");
+    }
+    const config = loadConfig();
+    const events = await new LedgerService(
+      new GuardStateStore(config.stateDirectory),
+    ).list(count);
+    if (json) {
+      process.stdout.write(`${JSON.stringify(events, null, 2)}\n`);
+      return;
+    }
+    for (const event of events) {
+      console.log(
+        [event.timestamp, event.type, event.agentId, event.model, event.reasonCode]
+          .filter(Boolean)
+          .join("  "),
+      );
+    }
   });
 
 program.parseAsync().catch((error: unknown) => {
@@ -423,6 +487,16 @@ function printToolContent(result: unknown): void {
 function controlService(): GuardControlService {
   const config = loadConfig();
   return new GuardControlService(new GuardStateStore(config.stateDirectory));
+}
+
+function keyLifecycleService(): OrbioKeyLifecycleService {
+  const config = loadConfig();
+  const stateStore = new GuardStateStore(config.stateDirectory);
+  return new OrbioKeyLifecycleService(
+    config,
+    new UpstreamKeyStore(config.stateDirectory),
+    new LedgerService(stateStore),
+  );
 }
 
 function commaList(value: string): string[] {

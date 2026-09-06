@@ -12,7 +12,7 @@
     "prefix": null,
     "createdAt": null,
     "lastUsedAt": null,
-    "baseUrl": "https://api.orbio.so/v1",
+    "baseUrl": "https://orbio.so/api/v1",
     "legacy": {
       "label": "Synthetic fixture",
       "limitUsd": 10,

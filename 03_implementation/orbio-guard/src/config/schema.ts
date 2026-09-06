@@ -27,7 +27,7 @@ const environmentSchema = z.object({
     .min(30_000)
     .max(600_000)
     .default(180_000),
-  ORBIO_GUARD_UPSTREAM_BASE_URL: z.url().default("https://api.orbio.so/v1"),
+  ORBIO_GUARD_UPSTREAM_BASE_URL: z.url().default("https://www.orbio.so/api/v1"),
   ORBIO_GUARD_DEFAULT_RESERVATION_USD: z.string().default("0.25"),
   ORBIO_GUARD_MAX_BODY_BYTES: z.coerce
     .number()

@@ -73,8 +73,8 @@ OAuth discovery.
 
 ## Still requiring authenticated capture
 
-- Result/error payloads for the three mutating runtime tools.
-- Rotation failure and rollback behavior.
+- Sanitized result/error fixtures for revoke and legacy-key deletion.
+- Live rotation and revocation behavior.
 - Token expiry and refresh behavior in a real session.
 
 ## Read-only result schemas
@@ -97,6 +97,21 @@ Authenticated calls confirmed that both read-only tools return MCP text content 
 
 Repository fixtures use synthetic values; live wallet addresses and balances are not
 committed.
+
+## Live key creation result
+
+The guarded `orbio_create_key` flow succeeded on 2026-09-06. Guard stored the returned
+`sk-orbio-...` secret with owner-only permissions, confirmed `hasKey` through
+`orbio_get_key_status`, removed its recovery file, and wrote only a fingerprint to the
+ledger.
+
+The key-status gateway URL redirects from the bare domain to `www`. Guard canonicalizes
+the host before forwarding because authorization headers are not preserved across that
+origin redirect.
+
+A live proxy request subsequently reached the authenticated gateway and returned
+`402 insufficient_quota`. This confirms routing and authentication but means a complete
+model-response smoke test requires available Orbio account credit.
 
 Do not create production parsing logic for these fields until sanitized authenticated
 fixtures have been captured.

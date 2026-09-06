@@ -24,8 +24,9 @@ export class UpstreamKeyStore {
 
   async save(key: string, baseUrl: URL): Promise<void> {
     const normalizedKey = key.trim();
+    const normalizedBaseUrl = canonicalizeOrbioBaseUrl(baseUrl);
     const state = credentialsSchema.parse({
-      baseUrl: baseUrl.toString(),
+      baseUrl: normalizedBaseUrl.toString(),
       key: normalizedKey,
       updatedAt: new Date().toISOString(),
     });
@@ -46,7 +47,7 @@ export class UpstreamKeyStore {
         JSON.parse(await readFile(this.filePath, "utf8")),
       );
       return {
-        baseUrl: new URL(state.baseUrl),
+        baseUrl: canonicalizeOrbioBaseUrl(new URL(state.baseUrl)),
         key: state.key,
         updatedAt: state.updatedAt,
       };
@@ -82,6 +83,14 @@ export class UpstreamKeyStore {
   async clear(): Promise<void> {
     await rm(this.filePath, { force: true });
   }
+}
+
+export function canonicalizeOrbioBaseUrl(baseUrl: URL): URL {
+  const canonical = new URL(baseUrl);
+  if (canonical.hostname === "orbio.so") {
+    canonical.hostname = "www.orbio.so";
+  }
+  return canonical;
 }
 
 function fingerprint(key: string): string {

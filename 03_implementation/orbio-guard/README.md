@@ -21,7 +21,10 @@ npm run dev -- init
 npm run dev -- agent add --name "Demo" --daily-budget 5 --models "*"
 npm run dev -- agent list
 npm run dev -- key import
+npm run dev -- key create --label "Orbio Guard"
+npm run dev -- key status
 npm run dev -- serve
+npm run dev -- activity
 ```
 
 For machine-readable diagnostics:
@@ -47,10 +50,13 @@ npm run dev -- doctor --json
 - Local OpenAI-compatible non-streaming chat completions proxy with upstream key
   isolation, conservative reservations, usage-cost reconciliation, timeout handling,
   and OpenAI-style Guard errors.
+- MCP-backed safe key creation/rotation and confirmed live key creation.
+- Metadata-only activity ledger for agent, policy, budget, request, upstream, and key
+  events.
 - Typed boundary and sanitized fixture for the authenticated five-tool runtime contract,
   plus detection of future tool-list changes.
 - Recursive credential redaction.
 - Initial unit tests.
 
-Mutating Orbio tool-result capture, automatic key lifecycle, streaming, crash
-reconciliation, spend ledger events, and dashboard work remain in later phases.
+Live key rotation/revocation, streaming, crash reconciliation, balance top-up, and the
+dashboard remain in later phases.

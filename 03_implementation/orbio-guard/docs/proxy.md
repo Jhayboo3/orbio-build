@@ -22,11 +22,14 @@ npm run dev -- key status
 The key is stored in `~/.orbio-guard/upstream.json` with owner-only permissions. Guard
 shows only a SHA-256 fingerprint after import.
 
-The current default gateway base URL is `https://api.orbio.so/v1`. Override it only
+The authenticated key-status response currently reports `https://orbio.so/api/v1`,
+which redirects to the canonical `https://www.orbio.so/api/v1` origin. Guard normalizes
+that host before forwarding so the authorization header is not lost across the redirect.
+Override it only
 when Orbio reports a different URL:
 
 ```bash
-export ORBIO_GUARD_UPSTREAM_BASE_URL="https://api.orbio.so/v1"
+export ORBIO_GUARD_UPSTREAM_BASE_URL="https://www.orbio.so/api/v1"
 ```
 
 ## Create a Guard agent

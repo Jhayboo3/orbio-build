@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { GuardStateStore } from "../state/store.js";
 import { parseMicroUsd } from "./money.js";
+import { appendLedgerEvent } from "./ledger.js";
 
 export class BudgetExceededError extends Error {
   readonly code = "DAILY_BUDGET_EXCEEDED";
@@ -43,6 +44,11 @@ export class BudgetService {
         createdAt: this.now().toISOString(),
       };
       budget.reservations.push(reservation);
+      appendLedgerEvent(state, {
+        agentId: input.agentId,
+        amountMicroUsd: input.amountMicroUsd,
+        type: "BUDGET_RESERVED",
+      });
 
       return { ...reservation, date };
     });
@@ -60,6 +66,11 @@ export class BudgetService {
         parseMicroUsd(located.budget.confirmedMicroUsd) +
         parseMicroUsd(confirmedMicroUsd)
       ).toString();
+      appendLedgerEvent(state, {
+        agentId: located.budget.agentId,
+        amountMicroUsd: confirmedMicroUsd,
+        type: "SPEND_CONFIRMED",
+      });
     });
   }
 
@@ -71,6 +82,11 @@ export class BudgetService {
       }
 
       located.budget.reservations.splice(located.index, 1);
+      appendLedgerEvent(state, {
+        agentId: located.budget.agentId,
+        amountMicroUsd: located.reservation.amountMicroUsd,
+        type: "RESERVATION_RELEASED",
+      });
     });
   }
 
@@ -129,7 +145,7 @@ function findReservation(
       (reservation) => reservation.id === reservationId,
     );
     if (index >= 0) {
-      return { budget, index };
+      return { budget, index, reservation: budget.reservations[index]! };
     }
   }
 

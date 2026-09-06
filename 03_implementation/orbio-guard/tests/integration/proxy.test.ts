@@ -63,8 +63,20 @@ describe("OpenAI-compatible proxy", () => {
       confirmedMicroUsd: "200000",
       reservedMicroUsd: "0",
     });
-    expect(await readFile(join(setup.stateDirectory, "guard.json"), "utf8")).not.toContain(
-      "first prompt",
+    const persistedState = await readFile(
+      join(setup.stateDirectory, "guard.json"),
+      "utf8",
+    );
+    expect(persistedState).not.toContain("first prompt");
+    expect(persistedState).not.toContain("or-test-upstream-secret");
+    expect(JSON.parse(persistedState).ledger.map((event: { type: string }) => event.type)).toEqual(
+      expect.arrayContaining([
+        "AGENT_CREATED",
+        "BUDGET_RESERVED",
+        "REQUEST_ALLOWED",
+        "SPEND_CONFIRMED",
+        "REQUEST_BLOCKED",
+      ]),
     );
   });
 

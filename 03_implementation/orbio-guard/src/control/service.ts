@@ -8,6 +8,7 @@ import {
   type GuardAgent,
 } from "../domain/agent.js";
 import { parseMicroUsd } from "../domain/money.js";
+import { appendLedgerEvent } from "../domain/ledger.js";
 import type { GuardStateStore } from "../state/store.js";
 
 export class GuardControlService {
@@ -31,6 +32,10 @@ export class GuardControlService {
     const created = createGuardAgent(input);
     await this.store.update((state) => {
       state.agents.push(created.agent);
+      appendLedgerEvent(state, {
+        agentId: created.agent.id,
+        type: "AGENT_CREATED",
+      });
     });
     return created;
   }
@@ -60,14 +65,14 @@ export class GuardControlService {
   }
 
   async setStatus(agentId: string, status: AgentStatus): Promise<GuardAgent> {
-    return this.updateAgent(agentId, (agent) => {
+    return this.updateAgent(agentId, "AGENT_STATUS_CHANGED", (agent) => {
       agent.status = status;
     });
   }
 
   async rotateToken(agentId: string): Promise<{ agent: GuardAgent; token: string }> {
     const token = createAgentToken();
-    const agent = await this.updateAgent(agentId, (current) => {
+    const agent = await this.updateAgent(agentId, "AGENT_TOKEN_ROTATED", (current) => {
       current.tokenHash = hashAgentToken(token);
     });
     return { agent, token };
@@ -91,7 +96,7 @@ export class GuardControlService {
       parseMicroUsd(policy.maxRequestMicroUsd);
     }
 
-    return this.updateAgent(agentId, (agent) => {
+    return this.updateAgent(agentId, "POLICY_UPDATED", (agent) => {
       if (policy.allowedModels) {
         agent.allowedModels = [...new Set(policy.allowedModels)];
       }
@@ -106,6 +111,10 @@ export class GuardControlService {
 
   private async updateAgent(
     agentId: string,
+    eventType:
+      | "AGENT_STATUS_CHANGED"
+      | "AGENT_TOKEN_ROTATED"
+      | "POLICY_UPDATED",
     update: (agent: GuardAgent) => void,
   ): Promise<GuardAgent> {
     return this.store.update((state) => {
@@ -115,6 +124,7 @@ export class GuardControlService {
       }
       update(agent);
       agent.updatedAt = new Date().toISOString();
+      appendLedgerEvent(state, { agentId, type: eventType });
       return structuredClone(agent);
     });
   }

@@ -1,8 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { z } from "zod";
 import { GuardRequestAuthorizer, GuardAuthorizationError } from "../control/authorizer.js";
 import { GuardControlService, InvalidAgentTokenError } from "../control/service.js";
 import { BudgetService } from "../domain/budget.js";
+import { LedgerService } from "../domain/ledger.js";
 import type { GuardConfig } from "../config/schema.js";
 import { GuardStateStore } from "../state/store.js";
 import { UpstreamKeyStore } from "../upstream/key-store.js";
@@ -28,7 +30,8 @@ export async function startProxyServer(
   const stateStore = new GuardStateStore(config.stateDirectory);
   const control = new GuardControlService(stateStore);
   const budgets = new BudgetService(stateStore);
-  const authorizer = new GuardRequestAuthorizer(control, budgets);
+  const ledger = new LedgerService(stateStore);
+  const authorizer = new GuardRequestAuthorizer(control, budgets, ledger);
   const keyStore = new UpstreamKeyStore(config.stateDirectory);
 
   await keyStore.load();
@@ -41,6 +44,7 @@ export async function startProxyServer(
       control,
       fetchImplementation,
       keyStore,
+      ledger,
       request,
       response,
     });
@@ -71,10 +75,13 @@ async function handleRequest(input: {
   control: GuardControlService;
   fetchImplementation: typeof fetch;
   keyStore: UpstreamKeyStore;
+  ledger: LedgerService;
   request: IncomingMessage;
   response: ServerResponse;
 }): Promise<void> {
   const { request, response } = input;
+  const requestId = randomUUID();
+  response.setHeader("x-orbio-guard-request-id", requestId);
 
   try {
     if (request.method !== "POST" || request.url !== "/v1/chat/completions") {
@@ -104,6 +111,7 @@ async function handleRequest(input: {
       agentToken,
       estimatedCostMicroUsd,
       model: body.model,
+      requestId,
     });
     const abortController = new AbortController();
     const timeout = setTimeout(
@@ -139,6 +147,13 @@ async function handleRequest(input: {
         );
       } else {
         await input.budgets.release(authorization.reservation.id);
+        await input.ledger.record({
+          agentId: authorization.agent.id,
+          httpStatus: upstreamResponse.status,
+          model: body.model,
+          requestId,
+          type: "UPSTREAM_ERROR",
+        });
       }
 
       response.statusCode = upstreamResponse.status;
@@ -146,13 +161,22 @@ async function handleRequest(input: {
         "content-type",
         upstreamResponse.headers.get("content-type") ?? "application/json",
       );
-      const requestId = upstreamResponse.headers.get("x-request-id");
-      if (requestId) {
-        response.setHeader("x-request-id", requestId);
+      const upstreamRequestId = upstreamResponse.headers.get("x-request-id");
+      if (upstreamRequestId) {
+        response.setHeader("x-request-id", upstreamRequestId);
       }
       response.end(upstreamBody);
     } catch (error) {
       await input.budgets.release(authorization.reservation.id);
+      await input.ledger.record({
+        agentId: authorization.agent.id,
+        model: body.model,
+        reasonCode: abortController.signal.aborted
+          ? "UPSTREAM_TIMEOUT"
+          : "UPSTREAM_ERROR",
+        requestId,
+        type: "UPSTREAM_ERROR",
+      });
       if (abortController.signal.aborted) {
         sendError(response, 504, "UPSTREAM_TIMEOUT", "The upstream request timed out.");
         return;

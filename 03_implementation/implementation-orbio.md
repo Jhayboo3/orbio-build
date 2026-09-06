@@ -11,20 +11,25 @@ and release criteria.
 
 - **Phase 0 - In progress:** OAuth authentication and the authenticated five-tool
   `tools/list` schema capture are complete. Read-only result schemas are implemented
-  using synthetic fixtures; mutating tool-result fixtures remain.
+  using synthetic fixtures, and live create-key behavior is verified. Revoke and legacy
+  delete fixtures remain.
 - **Phase 1 - Scaffold complete:** TypeScript CLI, configuration validation, OAuth
   discovery probe, redaction utilities, build scripts, and initial tests are working.
 - **Phase 2 - Control core complete:** persistent Guard identities, one-time hashed
   credentials, model/status/request policies, UTC daily budgets, and serialized
   reservation/confirm/release accounting are implemented. Policy/spend ledger events
   remain for the proxy milestone.
-- **Phase 3 - In progress:** the owner-only manual upstream-key vault and safe import,
-  status, and clear commands are complete. MCP-backed create/rotate/revoke remains.
+- **Phase 3 - In progress:** the owner-only key vault and MCP-backed guarded
+  create/rotate/revoke commands are implemented. Live key creation is verified; live
+  rotation and revoke remain intentionally unexecuted.
 - **Phase 4 - Proxy core complete:** local-only non-streaming chat completions enforce
   Guard identity and policy, reserve spend, isolate the Orbio key, reconcile
   provider-reported cost, and release unpriced failures. Streaming and crash recovery
-  remain deferred.
-- **Validation:** typecheck, thirty-one automated tests, production build,
+  remain deferred. A live request reached the gateway but returned `402` because the
+  connected account currently has no spendable credit.
+- **Ledger - Core complete:** metadata-only agent, policy, budget, request, upstream,
+  and key events are persisted without prompts, responses, or raw credentials.
+- **Validation:** typecheck, thirty-nine automated tests, production build,
   mock-upstream proxy integration, live OAuth discovery, authenticated reconnect,
   read-only status calls, isolated CLI workflow, and npm audit currently pass.
 
