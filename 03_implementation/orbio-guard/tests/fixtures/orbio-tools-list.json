@@ -1,0 +1,57 @@
+[
+  {
+    "name": "orbio_get_balance",
+    "title": "Get credit balance",
+    "description": "Read the Orbio credit balance for the connected account: what it has earned from holding $ORBIO, what it has bought, what it has spent through the gateway, and what is spendable now. Credits accrue every hour from trading fees, so this figure grows on its own. The balance is the quota: an Orbio key spends exactly this and no more.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "orbio_get_key_status",
+    "title": "Get key status",
+    "description": "Read the account's Orbio key: whether one exists, its visible head, when it was created and last used. The secret is returned only once, by orbio_create_key, and can never be read back. The key has no limit of its own; it spends the balance from orbio_get_balance. Also reports a legacy OpenRouter key if the account still holds one from before the gateway.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "orbio_create_key",
+    "title": "Create the Orbio key",
+    "description": "Mint the Orbio key that spends the account balance through the gateway. The secret is in this response and nowhere else, ever: store it where the agent keeps credentials before doing anything else. If a key already exists it is retired in the same statement, so this is also how a leaked key is replaced. There is no amount to choose: the key draws on the live balance, request by request, at the price OpenRouter states.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Optional name, up to 60 characters, e.g. the machine it lives on."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "orbio_revoke_key",
+    "title": "Revoke the Orbio key",
+    "description": "Stop the Orbio key on the next request and leave the account with none. The balance is untouched — the key never held credit, it only spent it — so nothing is refunded and nothing is lost. Create another whenever one is wanted.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "orbio_delete_key",
+    "title": "Delete the legacy OpenRouter key",
+    "description": "Disable a provisioned OpenRouter key from before the gateway and return whatever it had not spent to the account balance, where the Orbio key spends it. Nothing mints these any more, so this is a one-way clean-up. It cannot be undone: the disabled key never works again. Accounts that never claimed one have nothing to delete.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  }
+]

@@ -10,7 +10,7 @@ orbio-guard/
   src/
     cli.ts                # entry: status | keys | serve | setup | auth
     config.ts             # local state dir (~/.orbio-guard.json), env parsing
-    mcp.ts                # Orbio MCP client: balance/claim/create/top-up/rotate/delete
+    mcp.ts                # Orbio MCP client: balance/status/create/revoke/legacy delete
     auth.ts               # MCP 401 → browser sign-in handshake; token store
     policy.ts             # per-agent budgets, model allow-list, kill-switch
     rotation.ts           # leak detection (key reuse) + create/revoke rotation
@@ -22,11 +22,12 @@ orbio-guard/
 
 ## Key decisions
 - **Standalone-first with MCP integration:** if Orbio MCP auth works headless, the hub
-  creates/revokes real keys via `orbio_create_key`/`orbio_revoke_key`. Otherwise it
-  manages a pool of keys the user claims from Orbio (paste). Budget/rotation/audit work
-  either way.
-- **Local proxy enforces the budget** on every request, so even if an agent ignores the
-  MCP the wallet can't be blown; strict no-logging option.
+  creates/revokes the single real account key via
+  `orbio_create_key`/`orbio_revoke_key`. Otherwise it manages a manually supplied key.
+  Budget/rotation/audit work either way.
+- **Local proxy multiplexes Guard agent identities over one Orbio account key** and
+  enforces the budget on every request, so even if an agent ignores the MCP the wallet
+  can't be blown; strict no-logging option.
 - **Chain read is read-only** (public RPC / viem) — no signing needed for the MVP
   dashboard. Accrual is modeled from wallet share × fee volume (Orbio's exact ledger is
   off-chain; label as estimate).

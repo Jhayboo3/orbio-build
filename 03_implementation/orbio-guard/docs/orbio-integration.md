@@ -31,9 +31,9 @@ The current server advertises:
 - Registration endpoint: `https://www.orbio.so/api/mcp/oauth/register`.
 - Revocation endpoint: `https://www.orbio.so/api/mcp/oauth/revoke`.
 
-## Current documented tool contract
+## Public documentation contract
 
-The live documentation lists six tools:
+The public documentation currently lists six tools:
 
 1. `orbio_get_balance`
 2. `orbio_claim_credits`
@@ -42,8 +42,27 @@ The live documentation lists six tools:
 5. `orbio_rotate_key`
 6. `orbio_delete_key`
 
-This supersedes the earlier research note that described five tools and represented
-rotation as another `orbio_create_key` call.
+## Authenticated runtime contract
+
+An authenticated `tools/list` call on 2026-09-06 returned five tools:
+
+1. `orbio_get_balance` — no arguments; account balance is the quota.
+2. `orbio_get_key_status` — no arguments; reports the single current account key and
+   any legacy OpenRouter key.
+3. `orbio_create_key` — optional `label` string; creates the account key and retires an
+   existing key in the same statement, so it is also the rotation operation.
+4. `orbio_revoke_key` — no arguments; stops the current Orbio key without changing the
+   account balance.
+5. `orbio_delete_key` — no arguments; permanently disables only a legacy OpenRouter key
+   and returns its unused amount to the account balance.
+
+The sanitized schema capture is stored at
+`tests/fixtures/orbio-tools-list.json`. Runtime behavior takes precedence over the
+public six-tool page until Orbio aligns the two surfaces.
+
+This means Guard must multiplex its own per-agent credentials over one account-level
+Orbio key. Orbio does not currently expose per-key budgets or multiple simultaneous
+gateway keys for one account.
 
 ## Confirmed unauthenticated behavior
 
@@ -54,12 +73,42 @@ OAuth discovery.
 
 ## Still requiring authenticated capture
 
-- Exact JSON schemas returned by `tools/list`.
-- Exact result payloads for all six tools.
-- Key identifiers accepted by top-up, rotate, and delete.
+- Result/error payloads for the three mutating runtime tools.
 - Rotation failure and rollback behavior.
 - Token expiry and refresh behavior in a real session.
-- Whether key status/spend can be attributed to a Guard agent without one key per agent.
+
+## Read-only result schemas
+
+Authenticated calls confirmed that both read-only tools return MCP text content and
+`structuredContent`.
+
+`orbio_get_balance` currently returns:
+
+- `wallets`: connected wallet addresses.
+- `accrued`, `purchased`, `spent`, `claimed`, and `balance`.
+- Each money field contains numeric `usd` and integer-string `microUsd` values.
+
+`orbio_get_key_status` currently returns:
+
+- `hasKey`, visible `prefix`, `createdAt`, and `lastUsedAt`.
+- `baseUrl` for gateway requests.
+- Nullable `legacy` status with label, limit, usage, remaining amount, disabled state,
+  and whether the legacy secret remains readable.
+
+Repository fixtures use synthetic values; live wallet addresses and balances are not
+committed.
 
 Do not create production parsing logic for these fields until sanitized authenticated
 fixtures have been captured.
+
+## Local OAuth implementation
+
+`orbio-guard auth` uses the MCP TypeScript SDK's Streamable HTTP transport and OAuth
+provider contract. It dynamically registers a public client, uses authorization code +
+PKCE, opens the Orbio approval page, and receives the callback on
+`http://127.0.0.1:4319/oauth/callback` by default.
+
+Client registration, tokens, PKCE verifier, and OAuth state are stored in
+`~/.orbio-guard/oauth.json` with owner-only directory/file permissions. Writes use a
+temporary file followed by atomic rename. `orbio-guard logout` removes this local
+credential state.

@@ -14,12 +14,26 @@ const environmentSchema = z.object({
     .min(1_000)
     .max(120_000)
     .default(15_000),
+  ORBIO_GUARD_OAUTH_CALLBACK_PORT: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(65_535)
+    .default(4_319),
+  ORBIO_GUARD_OAUTH_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .min(30_000)
+    .max(600_000)
+    .default(180_000),
   ORBIO_GUARD_STATE_DIR: z.string().min(1).optional(),
 });
 
 export interface GuardConfig {
   host: string;
   mcpEndpoint: URL;
+  oauthCallbackPort: number;
+  oauthTimeoutMs: number;
   port: number;
   requestTimeoutMs: number;
   stateDirectory: string;
@@ -33,6 +47,8 @@ export function loadConfig(
   return {
     host: parsed.ORBIO_GUARD_HOST,
     mcpEndpoint: new URL(parsed.ORBIO_GUARD_MCP_ENDPOINT),
+    oauthCallbackPort: parsed.ORBIO_GUARD_OAUTH_CALLBACK_PORT,
+    oauthTimeoutMs: parsed.ORBIO_GUARD_OAUTH_TIMEOUT_MS,
     port: parsed.ORBIO_GUARD_PORT,
     requestTimeoutMs: parsed.ORBIO_GUARD_REQUEST_TIMEOUT_MS,
     stateDirectory: parsed.ORBIO_GUARD_STATE_DIR

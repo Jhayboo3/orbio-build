@@ -9,12 +9,13 @@ and release criteria.
 
 ## Current progress
 
-- **Phase 0 - In progress:** public MCP/OAuth discovery and the six-tool documentation
-  contract are confirmed. Authenticated `tools/list` and tool-result fixtures remain.
+- **Phase 0 - In progress:** OAuth authentication and the authenticated five-tool
+  `tools/list` schema capture are complete. Read-only result schemas are implemented
+  using synthetic fixtures; mutating tool-result fixtures remain.
 - **Phase 1 - Scaffold complete:** TypeScript CLI, configuration validation, OAuth
   discovery probe, redaction utilities, build scripts, and initial tests are working.
-- **Validation:** typecheck, five unit tests, production build, live OAuth discovery,
-  and npm audit currently pass.
+- **Validation:** typecheck, twelve unit tests, production build, live OAuth discovery,
+  authenticated reconnect, read-only status calls, and npm audit currently pass.
 
 ## 1. MVP outcome
 
@@ -157,7 +158,8 @@ The exact storage implementation may change, but these concepts must remain expl
 - `fingerprint`: non-secret hash suffix used for display and correlation.
 - `provider`: `orbio-mcp` or `manual`.
 - `status`: `active`, `rotating`, `revoked`, or `error`.
-- `assignedAgentIds`: expected agent ownership.
+- `assignedAgentIds`: Guard-side identities currently allowed to use the one upstream
+  account key through the proxy.
 - `createdAt`, `rotatedAt`, and `revokedAt`.
 - Secret material stored separately from normal configuration and ledger records.
 
@@ -208,8 +210,10 @@ Implementation:
 - Discover and record the actual tool list, JSON schemas, authentication lifecycle,
   errors, and response shapes.
 - Verify balance, create/import key, key status, rotation semantics, and revocation.
-- Confirm whether rotation is a separate operation or a `create_key` option.
-- Determine whether spend events expose agent-identifying data or only per-key totals.
+- Confirmed: runtime rotation is `orbio_create_key`, which retires an existing key in
+  the same statement.
+- Determine whether balance/status results expose enough spend data for reconciliation;
+  agent attribution remains a Guard-side responsibility.
 - Create sanitized JSON fixtures from successful and failed responses.
 - Define an `OrbioClient` interface so the real MCP client and manual fallback share the
   same application contract.

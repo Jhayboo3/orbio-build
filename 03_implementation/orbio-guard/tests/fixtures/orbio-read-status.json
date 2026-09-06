@@ -1,0 +1,25 @@
+{
+  "balance": {
+    "wallets": ["0x0000000000000000000000000000000000000000"],
+    "accrued": { "usd": 12.34, "microUsd": "12340000" },
+    "purchased": { "usd": 0, "microUsd": "0" },
+    "spent": { "usd": 1.25, "microUsd": "1250000" },
+    "claimed": { "usd": 12.34, "microUsd": "12340000" },
+    "balance": { "usd": 11.09, "microUsd": "11090000" }
+  },
+  "keyStatus": {
+    "hasKey": false,
+    "prefix": null,
+    "createdAt": null,
+    "lastUsedAt": null,
+    "baseUrl": "https://api.orbio.so/v1",
+    "legacy": {
+      "label": "Synthetic fixture",
+      "limitUsd": 10,
+      "usageUsd": 2,
+      "remainingUsd": 8,
+      "disabled": false,
+      "readable": false
+    }
+  }
+}

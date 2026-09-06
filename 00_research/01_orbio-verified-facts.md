@@ -27,13 +27,18 @@ Everything below was retrieved directly from `orbio.so`, `holders.orbio.so`,
 ## Orbio MCP (holders.orbio.so/mcp) — the key primitive for our build
 - Public HTTP MCP endpoint: **`https://www.orbio.so/api/mcp`**
 - Connect: `claude mcp add --transport http --scope user orbio https://www.orbio.so/api/mcp` then `/mcp` → Authenticate (browser 401 sign-in). `--scope user` = credits belong to the account, not one repo.
-- **Six tools (current live documentation):**
+- **Public MCP page lists six tools:**
   1. `orbio_get_balance` — credits accrued
   2. `orbio_claim_credits` — claims available credits
   3. `orbio_create_key` — creates a key that spends balance live
   4. `orbio_top_up_key` — adds available balance to a key
   5. `orbio_rotate_key` — replaces an existing key
   6. `orbio_delete_key` — deletes/revokes a key
+- **Authenticated `tools/list` currently returns five runtime tools:**
+  `orbio_get_balance`, `orbio_get_key_status`, `orbio_create_key`,
+  `orbio_revoke_key`, and `orbio_delete_key`.
+- Runtime `orbio_create_key` accepts an optional label and retires the existing account
+  key in the same statement; it is the current rotation mechanism.
 - OAuth discovery confirms authorization-code + refresh-token grants, PKCE `S256`,
   dynamic client registration, and required scope `orbio:credits`.
 - Orbio ships new features daily during Build Week; tool contracts must be discovered

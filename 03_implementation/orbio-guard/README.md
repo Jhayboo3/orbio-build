@@ -15,6 +15,8 @@ npm install
 npm run typecheck
 npm test
 npm run dev -- doctor
+npm run dev -- auth
+npm run dev -- status
 ```
 
 For machine-readable diagnostics:
@@ -28,9 +30,14 @@ npm run dev -- doctor --json
 - TypeScript/CLI scaffold.
 - Validated runtime configuration.
 - Live Orbio OAuth metadata discovery and unauthenticated MCP probe.
-- Typed boundary for the current six-tool Orbio contract.
+- OAuth authorization-code flow with PKCE, dynamic client registration, loopback
+  callback state validation, refresh-token support, and owner-only local storage.
+- Authenticated `auth`, `tools`, and `logout` CLI commands.
+- Read-only authenticated `status` command for balance and account-key state.
+- Typed boundary and sanitized fixture for the authenticated five-tool runtime contract,
+  plus detection of future tool-list changes.
 - Recursive credential redaction.
 - Initial unit tests.
 
-Authenticated OAuth, MCP tool execution, persistence, policies, proxying, and dashboard
-work remain in later phases.
+Authenticated tool-result fixture capture, MCP tool execution, policy persistence,
+proxying, and dashboard work remain in later phases.
