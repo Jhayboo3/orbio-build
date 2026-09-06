@@ -14,8 +14,13 @@ and release criteria.
   using synthetic fixtures; mutating tool-result fixtures remain.
 - **Phase 1 - Scaffold complete:** TypeScript CLI, configuration validation, OAuth
   discovery probe, redaction utilities, build scripts, and initial tests are working.
-- **Validation:** typecheck, twelve unit tests, production build, live OAuth discovery,
-  authenticated reconnect, read-only status calls, and npm audit currently pass.
+- **Phase 2 - Control core complete:** persistent Guard identities, one-time hashed
+  credentials, model/status/request policies, UTC daily budgets, and serialized
+  reservation/confirm/release accounting are implemented. Policy/spend ledger events
+  remain for the proxy milestone.
+- **Validation:** typecheck, twenty-three unit tests, production build, live OAuth
+  discovery, authenticated reconnect, read-only status calls, isolated CLI workflow,
+  and npm audit currently pass.
 
 ## 1. MVP outcome
 

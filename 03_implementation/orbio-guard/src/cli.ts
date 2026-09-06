@@ -4,6 +4,8 @@ import { Command } from "commander";
 import { ZodError } from "zod";
 import { loadConfig } from "./config/schema.js";
 import { OAuthStateStore } from "./auth/oauth-store.js";
+import { GuardControlService } from "./control/service.js";
+import { formatMicroUsd, parseUsdToMicroUsd } from "./domain/money.js";
 import {
   discoverOrbioOAuth,
   probeOrbioMcpAuthentication,
@@ -20,6 +22,7 @@ import {
   parseStructuredToolResult,
 } from "./orbio/results.js";
 import { redactValue } from "./shared/redaction.js";
+import { GuardStateStore } from "./state/store.js";
 
 const program = new Command();
 
@@ -166,6 +169,151 @@ program
     console.log("Local Orbio OAuth credentials removed.");
   });
 
+program
+  .command("init")
+  .description("Create and validate the local Guard state file.")
+  .action(async () => {
+    const config = loadConfig();
+    const store = new GuardStateStore(config.stateDirectory);
+    await store.update(() => undefined);
+    console.log(`Guard state initialized at ${store.filePath}`);
+  });
+
+const agentCommand = program
+  .command("agent")
+  .description("Manage Guard-side agent identities.");
+
+agentCommand
+  .command("add")
+  .requiredOption("--name <name>", "Human-readable agent name.")
+  .requiredOption("--daily-budget <usd>", "Daily budget in USD.")
+  .requiredOption(
+    "--models <patterns>",
+    "Comma-separated exact model IDs or suffix wildcards.",
+  )
+  .option("--max-request <usd>", "Optional per-request USD ceiling.")
+  .option("--project <project>", "Optional project or repository label.")
+  .action(
+    async (options: {
+      dailyBudget: string;
+      maxRequest?: string;
+      models: string;
+      name: string;
+      project?: string;
+    }) => {
+      const service = controlService();
+      const created = await service.addAgent({
+        allowedModels: commaList(options.models),
+        dailyBudgetMicroUsd: parseUsdToMicroUsd(options.dailyBudget),
+        ...(options.maxRequest
+          ? { maxRequestMicroUsd: parseUsdToMicroUsd(options.maxRequest) }
+          : {}),
+        name: options.name,
+        ...(options.project ? { project: options.project } : {}),
+      });
+
+      console.log(`Agent created: ${created.agent.name} (${created.agent.id})`);
+      console.log("Save this Guard token now; it will not be shown again:");
+      console.log(created.token);
+    },
+  );
+
+agentCommand
+  .command("list")
+  .option("--json", "Print machine-readable output.")
+  .action(async ({ json }: { json?: boolean }) => {
+    const agents = (await controlService().listAgents()).map(safeAgentView);
+    if (json) {
+      process.stdout.write(`${JSON.stringify(agents, null, 2)}\n`);
+      return;
+    }
+
+    if (agents.length === 0) {
+      console.log("No Guard agents configured.");
+      return;
+    }
+
+    for (const agent of agents) {
+      console.log(
+        `${agent.id}  ${agent.name}  ${agent.status}  $${agent.dailyBudgetUsd}/day  ${agent.allowedModels.join(",")}`,
+      );
+    }
+  });
+
+for (const status of ["active", "paused", "disabled"] as const) {
+  const commandName =
+    status === "active" ? "resume" : status === "paused" ? "pause" : "disable";
+  agentCommand
+    .command(`${commandName} <agentId>`)
+    .description(`Set an agent's status to ${status}.`)
+    .action(async (agentId: string) => {
+      const agent = await controlService().setStatus(agentId, status);
+      console.log(`${agent.name} is now ${agent.status}.`);
+    });
+}
+
+agentCommand
+  .command("rotate-token <agentId>")
+  .description("Invalidate an agent token and issue a replacement.")
+  .action(async (agentId: string) => {
+    const result = await controlService().rotateToken(agentId);
+    console.log(`Token rotated for ${result.agent.name}. Save the replacement now:`);
+    console.log(result.token);
+  });
+
+const policyCommand = program
+  .command("policy")
+  .description("Inspect and update per-agent policies.");
+
+policyCommand
+  .command("show <agentId>")
+  .option("--json", "Print machine-readable output.")
+  .action(async (agentId: string, { json }: { json?: boolean }) => {
+    const agent = safeAgentView(await controlService().getAgent(agentId));
+    if (json) {
+      process.stdout.write(`${JSON.stringify(agent, null, 2)}\n`);
+      return;
+    }
+
+    console.log(`${agent.name} (${agent.id})`);
+    console.log(`Status: ${agent.status}`);
+    console.log(`Daily budget: $${agent.dailyBudgetUsd}`);
+    console.log(`Max request: ${agent.maxRequestUsd ? `$${agent.maxRequestUsd}` : "none"}`);
+    console.log(`Allowed models: ${agent.allowedModels.join(", ")}`);
+  });
+
+policyCommand
+  .command("set <agentId>")
+  .option("--daily-budget <usd>", "Daily budget in USD.")
+  .option("--max-request <usd>", 'Per-request USD ceiling or "none".')
+  .option("--models <patterns>", "Comma-separated model patterns.")
+  .action(
+    async (
+      agentId: string,
+      options: { dailyBudget?: string; maxRequest?: string; models?: string },
+    ) => {
+      if (!options.dailyBudget && !options.maxRequest && !options.models) {
+        throw new Error("Provide at least one policy option to update.");
+      }
+
+      const agent = await controlService().updatePolicy(agentId, {
+        ...(options.dailyBudget
+          ? { dailyBudgetMicroUsd: parseUsdToMicroUsd(options.dailyBudget) }
+          : {}),
+        ...(options.maxRequest
+          ? {
+              maxRequestMicroUsd:
+                options.maxRequest === "none"
+                  ? null
+                  : parseUsdToMicroUsd(options.maxRequest),
+            }
+          : {}),
+        ...(options.models ? { allowedModels: commaList(options.models) } : {}),
+      });
+      console.log(`Policy updated for ${agent.name}.`);
+    },
+  );
+
 program.parseAsync().catch((error: unknown) => {
   if (error instanceof ZodError) {
     console.error("Invalid Orbio Guard configuration:");
@@ -202,4 +350,45 @@ function printToolContent(result: unknown): void {
       console.log(redactValue(item.text));
     }
   }
+}
+
+function controlService(): GuardControlService {
+  const config = loadConfig();
+  return new GuardControlService(new GuardStateStore(config.stateDirectory));
+}
+
+function commaList(value: string): string[] {
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function safeAgentView(agent: {
+  allowedModels: string[];
+  createdAt: string;
+  dailyBudgetMicroUsd: string;
+  id: string;
+  maxRequestMicroUsd: string | null;
+  name: string;
+  project: string | null;
+  status: string;
+  tokenHash: string;
+  updatedAt: string;
+}) {
+  return {
+    id: agent.id,
+    name: agent.name,
+    project: agent.project,
+    status: agent.status,
+    dailyBudgetUsd: formatMicroUsd(agent.dailyBudgetMicroUsd),
+    maxRequestUsd:
+      agent.maxRequestMicroUsd === null
+        ? null
+        : formatMicroUsd(agent.maxRequestMicroUsd),
+    allowedModels: agent.allowedModels,
+    tokenFingerprint: agent.tokenHash.slice(0, 12),
+    createdAt: agent.createdAt,
+    updatedAt: agent.updatedAt,
+  };
 }

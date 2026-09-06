@@ -19,8 +19,9 @@ Ranked, practical recommendations for the Orbio.so Build Week.
    and drive spend through their gateway. Mention credit liquidity & key reuse across
    OpenRouter models.
 
-5. **Security/trust angle as the differentiator.** No-logging relay, per-agent keys,
-   auto-rotation on detected sharing, instant revoke via MCP. ~35 other builders will
+5. **Security/trust angle as the differentiator.** No-logging relay, per-agent Guard
+   credentials over one protected Orbio key, auto-rotation on detected upstream-key
+   exposure, instant revoke via MCP. ~35 other builders will
    demo the MCP; almost none will show enforced, audited multi-agent control.
 
 6. **Ship the artifacts judges parse:**
