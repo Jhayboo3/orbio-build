@@ -3,8 +3,8 @@
 **One wallet. Many agents. Safe spend.**
 
 A local credit-control layer that sits between your agents and the **Orbio MCP**
-(`https://www.orbio.so/api/mcp`, tools `get_balance / create_key / get_key_status /
-revoke_key`), letting a wallet's credits be shared safely across a whole team while
+(`https://www.orbio.so/api/mcp`, tools for balance, claims, key creation, top-up,
+rotation and deletion), letting a wallet's credits be shared safely across a whole team while
 enforcing budgets, rotation and audit.
 
 ## Why this (gap)
@@ -13,14 +13,15 @@ enforcing budgets, rotation and audit.
   no per-agent limits, no shared-team model, no audit, no enforced rotation.
 
 ## Core features (MVP scope)
-1. **Authenticate once** to the real Orbio MCP (browser 401 sign-in); proxy the 5 tools.
+1. **Authenticate once** to the real Orbio MCP using OAuth + PKCE; proxy its 6 current
+   tools through a version-tolerant adapter.
 2. **Policy engine on top:**
    - per-agent / per-project **daily budgets**
    - model allow-list
    - kill-switch per agent
    - spend ledger + alerts (e.g., "agent hit 80% of budget")
-3. **Leak-loop automation:** detect a key used by >1 agent → `orbio_create_key`
-   (new secret) + auto-revoke old key in the same statement.
+3. **Leak-loop automation:** detect a key used by >1 agent → `orbio_rotate_key`
+   (new secret) after verifying a safe rollback path.
 4. **Agent wiring:** `orbio-guard setup codex|claude|cursor` points tools at the guard,
    which owns the live key (nobody shares a secret).
 5. **OpenAI/OpenRouter-compatible local proxy** so SDKs work unchanged; budgets enforced

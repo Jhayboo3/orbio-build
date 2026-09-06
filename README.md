@@ -5,7 +5,8 @@ credit-control / multi-agent spend layer on top of Orbio's MCP).
 
 - **Location:** `/Users/admin/Developer/orbio build`
 - **Self-contained:** Yes. Move the whole folder anywhere; nothing outside is required.
-- **Status:** Research complete · implementation not yet started (scaffold happens in `03_implementation/`).
+- **Status:** Research complete · Phase 0/1 implementation scaffold active in
+  `03_implementation/orbio-guard/`.
 
 ## Contents
 

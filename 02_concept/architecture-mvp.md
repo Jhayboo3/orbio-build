@@ -10,7 +10,7 @@ orbio-guard/
   src/
     cli.ts                # entry: status | keys | serve | setup | auth
     config.ts             # local state dir (~/.orbio-guard.json), env parsing
-    mcp.ts                # Orbio MCP client: get_balance/create_key/get_key_status/revoke_key
+    mcp.ts                # Orbio MCP client: balance/claim/create/top-up/rotate/delete
     auth.ts               # MCP 401 → browser sign-in handshake; token store
     policy.ts             # per-agent budgets, model allow-list, kill-switch
     rotation.ts           # leak detection (key reuse) + create/revoke rotation

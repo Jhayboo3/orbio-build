@@ -7,6 +7,15 @@ credit-control layer between AI agents and Orbio/OpenRouter. It converts the pro
 concept in `../02_concept/` into implementation phases, test gates, demo requirements,
 and release criteria.
 
+## Current progress
+
+- **Phase 0 - In progress:** public MCP/OAuth discovery and the six-tool documentation
+  contract are confirmed. Authenticated `tools/list` and tool-result fixtures remain.
+- **Phase 1 - Scaffold complete:** TypeScript CLI, configuration validation, OAuth
+  discovery probe, redaction utilities, build scripts, and initial tests are working.
+- **Validation:** typecheck, five unit tests, production build, live OAuth discovery,
+  and npm audit currently pass.
+
 ## 1. MVP outcome
 
 By the end of the MVP, a user can:
