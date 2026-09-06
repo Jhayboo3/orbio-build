@@ -15,4 +15,15 @@ Generate the silent MP4 demo draft with:
 npm run video:record
 ```
 
+Generate the synthetic narrated MP4 draft with:
+
+```bash
+npm run video:narrate
+```
+
+Generated video outputs:
+
+- `orbio-guard-demo.mp4` - silent dashboard sequence.
+- `orbio-guard-demo-narrated.mp4` - synthetic Samantha-voice narration draft.
+
 Do not replace them with screenshots containing live secrets or complete wallet data.

@@ -44,7 +44,9 @@ metadata-only audit trail.
 
 Timed scripts are ready in `docs/pitch-script.md` and
 `docs/technical-walkthrough.md`. A verified silent H.264 screen-capture draft is
-available at `docs/assets/orbio-guard-demo.mp4`; final narration is not yet recorded.
+available at `docs/assets/orbio-guard-demo.mp4`. A 27-second synthetic narrated H.264/AAC
+draft is available at `docs/assets/orbio-guard-demo-narrated.mp4`; full-length personal
+pitch and technical narration are not yet recorded.
 
 ## Release gate
 

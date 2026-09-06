@@ -1,0 +1,5 @@
+One wallet. Many agents. Safe spend.
+
+One Orbio account can fund an entire agent fleet, but every agent should not control the whole balance. Orbio Guard gives Alpha and Beta separate identities and budgets while keeping the upstream key protected.
+
+Alpha runs. Beta runs once, then its next request exceeds policy and is blocked before provider access. Alpha continues. The dashboard records spend and decisions, never prompts or secrets.

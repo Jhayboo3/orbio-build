@@ -46,6 +46,8 @@ Open the printed dashboard URL to see spend and decisions update. Demo mode is v
 labeled and uses synthetic account/key data.
 
 Silent screen-capture draft: [Orbio Guard demo MP4](docs/assets/orbio-guard-demo.mp4).
+Synthetic narrated draft:
+[Orbio Guard narrated demo MP4](docs/assets/orbio-guard-demo-narrated.mp4).
 See `docs/video-storyboard.md` for narration and editing cues.
 
 ## Supported Clients

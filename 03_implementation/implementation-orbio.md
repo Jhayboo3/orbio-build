@@ -50,8 +50,8 @@ and release criteria.
   read-only status calls, isolated CLI workflow, npm audit, Docker build, non-root
   container startup, dashboard serving, and health/readiness smoke checks pass.
 - **Submission blockers:** the connected account has no spendable inference credit, the
-  repository is intentionally private, and final narrated pitch/technical videos are not
-  yet recorded. A verified silent demo MP4 is ready.
+  repository is intentionally private, and full-length personal pitch/technical videos
+  are not yet recorded. Verified silent and synthetic-narrated demo MP4s are ready.
 - **Submission materials prepared:** synthetic desktop/mobile screenshots, architecture
   diagrams, timed pitch and technical scripts, troubleshooting, security, deployment,
   and final submission guides are complete.

@@ -10,9 +10,24 @@ npm run video:record
 
 Output: `docs/assets/orbio-guard-demo.mp4`.
 
+Generate the synthetic narrated draft on macOS:
+
+```bash
+npm run video:narrate
+```
+
+Output: `docs/assets/orbio-guard-demo-narrated.mp4`.
+
+The current narrated draft is 27 seconds, H.264/AAC at 1440×900. Its normalized audio
+measures approximately `-15.6 dB` mean and `-1.5 dB` peak.
+
 The generated clip uses synthetic demo state and visible top-right captions. Add the
 narration from `docs/pitch-script.md` in a video editor or record a live voiceover while
 running `orbio-guard demo --hold`.
+
+The automated narrated version uses the macOS Samantha system voice and the concise text
+in `docs/demo-narration.txt`. Treat it as a submission draft; replace it with the
+builder's voice if personal narration is preferred.
 
 ## Shot sequence
 
