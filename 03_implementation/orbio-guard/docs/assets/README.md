@@ -9,4 +9,10 @@ Regenerate them with:
 npm run assets:capture
 ```
 
+Generate the silent MP4 demo draft with:
+
+```bash
+npm run video:record
+```
+
 Do not replace them with screenshots containing live secrets or complete wallet data.

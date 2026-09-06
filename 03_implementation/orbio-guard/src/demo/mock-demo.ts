@@ -25,7 +25,9 @@ export interface DemoResult {
 export interface MockDemoRuntime {
   close(): Promise<void>;
   dashboardUrl: string;
+  result(): Promise<DemoResult>;
   run(): Promise<DemoResult>;
+  runNext(): Promise<DemoStep | null>;
 }
 
 export async function createMockDemo(): Promise<MockDemoRuntime> {
@@ -74,24 +76,44 @@ export async function createMockDemo(): Promise<MockDemoRuntime> {
     throw new Error("Demo proxy did not bind to a TCP port.");
   }
   const baseUrl = `http://127.0.0.1:${address.port}`;
+  const plannedSteps = [
+    () => demoRequest(baseUrl, alpha.token, "alpha-one", "allowed"),
+    () => demoRequest(baseUrl, beta.token, "beta-one", "allowed"),
+    () => demoRequest(baseUrl, beta.token, "beta-two", "budget blocked"),
+    () => demoRequest(baseUrl, alpha.token, "alpha-two", "fleet continues"),
+  ];
+  const completedSteps: DemoStep[] = [];
+
+  async function result(): Promise<DemoResult> {
+    const activity = await new LedgerService(store).list(30);
+    return {
+      activityTypes: activity.map((event) => event.type),
+      dashboardUrl: `${baseUrl}/dashboard`,
+      mode: "mock",
+      steps: [...completedSteps],
+    };
+  }
+
+  async function runNext(): Promise<DemoStep | null> {
+    const next = plannedSteps[completedSteps.length];
+    if (!next) {
+      return null;
+    }
+    const step = await next();
+    completedSteps.push(step);
+    return step;
+  }
 
   return {
     dashboardUrl: `${baseUrl}/dashboard`,
+    result,
     async run() {
-      const steps = [
-        await demoRequest(baseUrl, alpha.token, "alpha-one", "allowed"),
-        await demoRequest(baseUrl, beta.token, "beta-one", "allowed"),
-        await demoRequest(baseUrl, beta.token, "beta-two", "budget blocked"),
-        await demoRequest(baseUrl, alpha.token, "alpha-two", "fleet continues"),
-      ];
-      const activity = await new LedgerService(store).list(30);
-      return {
-        activityTypes: activity.map((event) => event.type),
-        dashboardUrl: `${baseUrl}/dashboard`,
-        mode: "mock",
-        steps,
-      };
+      while (await runNext()) {
+        continue;
+      }
+      return result();
     },
+    runNext,
     async close() {
       await proxy.close();
       await closeServer(upstream.server);

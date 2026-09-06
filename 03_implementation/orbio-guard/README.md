@@ -45,6 +45,9 @@ The demo creates two temporary agents:
 Open the printed dashboard URL to see spend and decisions update. Demo mode is visibly
 labeled and uses synthetic account/key data.
 
+Silent screen-capture draft: [Orbio Guard demo MP4](docs/assets/orbio-guard-demo.mp4).
+See `docs/video-storyboard.md` for narration and editing cues.
+
 ## Supported Clients
 
 Guard exposes one local base URL with a shared policy path for:
@@ -155,7 +158,7 @@ docker build -t orbio-guard:release .
 The release gate currently includes:
 
 - Strict TypeScript checking.
-- 52 unit and integration tests.
+- 53 unit and integration tests.
 - Desktop and mobile Chromium rendering checks.
 - Production build and dependency audit.
 - Mock Chat Completions, Responses, Anthropic Messages, and SSE streaming checks.
@@ -177,6 +180,7 @@ The same release gate and Docker build pass in GitHub Actions.
 - `docs/troubleshooting.md` - common auth, key, policy, budget, and container issues.
 - `docs/pitch-script.md` - timed product pitch.
 - `docs/technical-walkthrough.md` - timed engineering walkthrough.
+- `docs/video-storyboard.md` - reproducible MP4 recording and narration cues.
 - `docs/submission.md` - final Build Week checklist.
 
 ## Verified Status and Limitations

@@ -43,7 +43,8 @@ metadata-only audit trail.
 - Installation, deployment, security, demo, limitations, and troubleshooting docs.
 
 Timed scripts are ready in `docs/pitch-script.md` and
-`docs/technical-walkthrough.md`; final narrated video files are not yet recorded.
+`docs/technical-walkthrough.md`. A verified silent H.264 screen-capture draft is
+available at `docs/assets/orbio-guard-demo.mp4`; final narration is not yet recorded.
 
 ## Release gate
 

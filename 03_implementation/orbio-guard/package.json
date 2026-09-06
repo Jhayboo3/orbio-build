@@ -16,6 +16,7 @@
     "test:integration": "vitest run tests/integration",
     "test:ui": "npm run build && node tests/e2e/dashboard-render.mjs",
     "assets:capture": "npm run build && node scripts/capture-submission-assets.mjs",
+    "video:record": "npm run build && node scripts/record-demo-video.mjs",
     "release:check": "npm run typecheck && npm test && npm run build && npm run test:ui && npm audit --audit-level=high"
   },
   "engines": {

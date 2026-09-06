@@ -44,13 +44,14 @@ and release criteria.
 - **Phase 8 - Packaging complete:** release checks, health/readiness endpoints, GitHub
   Actions CI, a non-root Node 24 image, localhost-only Compose profile, security policy,
   deployment guide, and submission checklist are implemented.
-- **Validation:** typecheck, fifty-two automated tests, production build, desktop/mobile
+- **Validation:** typecheck, fifty-three automated tests, production build, desktop/mobile
   Playwright rendering with zero browser errors or horizontal overflow,
   mock-upstream proxy integration, live OAuth discovery, authenticated reconnect,
   read-only status calls, isolated CLI workflow, npm audit, Docker build, non-root
   container startup, dashboard serving, and health/readiness smoke checks pass.
 - **Submission blockers:** the connected account has no spendable inference credit, the
-  repository is intentionally private, and pitch/technical videos are not yet recorded.
+  repository is intentionally private, and final narrated pitch/technical videos are not
+  yet recorded. A verified silent demo MP4 is ready.
 - **Submission materials prepared:** synthetic desktop/mobile screenshots, architecture
   diagrams, timed pitch and technical scripts, troubleshooting, security, deployment,
   and final submission guides are complete.
