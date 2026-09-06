@@ -33,13 +33,14 @@ import {
   generateSetupGuide,
   type SetupTarget,
 } from "./setup/generator.js";
+import { SubmissionReadinessService } from "./submission/readiness.js";
 
 const program = new Command();
 
 program
   .name("orbio-guard")
   .description("Local-first credit controls for Orbio-powered AI agents.")
-  .version("0.1.0-rc.1");
+  .version("0.1.0-rc.2");
 
 program
   .command("doctor")
@@ -549,6 +550,24 @@ program
       }
     } finally {
       await demo.close();
+    }
+  });
+
+program
+  .command("submission-check")
+  .description("Report live submission blockers without exposing account values.")
+  .option("--json", "Print machine-readable output.")
+  .action(async ({ json }: { json?: boolean }) => {
+    const result = await new SubmissionReadinessService(loadConfig()).check();
+    if (json) {
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      return;
+    }
+    console.log(`Submission readiness: ${result.ready ? "READY" : "BLOCKED"}`);
+    for (const check of result.checks) {
+      const marker =
+        check.status === "pass" ? "PASS" : check.status === "warn" ? "WARN" : "BLOCK";
+      console.log(`[${marker}] ${check.message}`);
     }
   });
 

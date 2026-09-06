@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0-rc.2 - 2026-09-06
+
+### Added
+
+- Full-length synthetic narrated product and technical walkthrough videos.
+- Dedicated technical architecture presentation page.
+- Submission-readiness auditing for OAuth, key state, credit, permissions, Git status,
+  release visibility, tag alignment, and media duration.
+- Timed dashboard regression coverage for remote key-state persistence.
+
+### Changed
+
+- Updated verification evidence from 53 to 55 automated tests.
+- Preserved remote key health across frequent local dashboard refreshes.
+
 ## 0.1.0-rc.1 - 2026-09-06
 
 ### Added
@@ -21,7 +36,7 @@
 
 ### Verified
 
-- 53 automated tests.
+- 55 automated tests on the current release candidate.
 - Desktop and mobile Chromium rendering.
 - Docker build and non-root container smoke test.
 - GitHub Actions release check and Docker build.

@@ -10,4 +10,4 @@ The ledger records agent IDs, models, decisions, cost, key fingerprints, and ups
 
 State writes use schema validation, temporary files, atomic rename, and stale-lock recovery. After a crash, old reservations are conservatively confirmed by default because the provider may still have billed the request.
 
-The release gate covers fifty-three automated tests, desktop and mobile browser rendering, dependency audit, protocol streaming, Docker build, non-root runtime, and GitHub Actions. Orbio funds the key. Guard controls the work.
+The release gate covers fifty-five automated tests, desktop and mobile browser rendering, dependency audit, protocol streaming, Docker build, non-root runtime, and GitHub Actions. Orbio funds the key. Guard controls the work.

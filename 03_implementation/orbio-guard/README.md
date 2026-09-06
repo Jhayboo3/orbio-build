@@ -166,7 +166,7 @@ docker build -t orbio-guard:release .
 The release gate currently includes:
 
 - Strict TypeScript checking.
-- 53 unit and integration tests.
+- 55 unit and integration tests.
 - Desktop and mobile Chromium rendering checks.
 - Production build and dependency audit.
 - Mock Chat Completions, Responses, Anthropic Messages, and SSE streaming checks.
@@ -205,4 +205,4 @@ The same release gate and Docker build pass in GitHub Actions.
   before a public Build Week submission.
 - The supplied deployment is localhost-oriented, not a public multi-tenant service.
 
-Current release candidate: `v0.1.0-rc.1`, prepared September 6, 2026.
+Current release candidate: `v0.1.0-rc.2`, prepared September 6, 2026.

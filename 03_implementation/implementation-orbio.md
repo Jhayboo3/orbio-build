@@ -44,7 +44,7 @@ and release criteria.
 - **Phase 8 - Packaging complete:** release checks, health/readiness endpoints, GitHub
   Actions CI, a non-root Node 24 image, localhost-only Compose profile, security policy,
   deployment guide, and submission checklist are implemented.
-- **Validation:** typecheck, fifty-three automated tests, production build, desktop/mobile
+- **Validation:** typecheck, fifty-five automated tests, production build, desktop/mobile
   Playwright rendering with zero browser errors or horizontal overflow,
   mock-upstream proxy integration, live OAuth discovery, authenticated reconnect,
   read-only status calls, isolated CLI workflow, npm audit, Docker build, non-root
@@ -56,7 +56,7 @@ and release criteria.
 - **Submission materials prepared:** synthetic desktop/mobile screenshots, architecture
   diagrams, timed pitch and technical scripts, troubleshooting, security, deployment,
   and final submission guides are complete.
-- **Release candidate:** `v0.1.0-rc.1` prepared on September 6, 2026.
+- **Release candidate:** `v0.1.0-rc.2` prepared on September 6, 2026.
 
 ## 1. MVP outcome
 

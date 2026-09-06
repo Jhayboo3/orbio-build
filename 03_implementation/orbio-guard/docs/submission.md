@@ -59,12 +59,18 @@ Personal re-narration remains optional if the builder wants their own voice.
 
 ```bash
 npm run release:check
+npm run submission:check
 docker build -t orbio-guard:release .
 git status --short
 ```
 
 Require a clean repository, passing tests, zero high-severity audit findings, successful
 desktop/mobile rendering, and no credentials in tracked files.
+
+`submission:check` also reports live OAuth/key/credit readiness, local permissions,
+release tag alignment, repository visibility, draft-release status, and media durations
+without printing wallet balances or credentials. Use `node scripts/submission-check.mjs
+--strict` when every public-launch blocker should produce a non-zero exit code.
 
 ## Honest limitations to disclose
 
