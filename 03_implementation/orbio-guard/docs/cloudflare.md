@@ -30,6 +30,12 @@ Required production configuration:
 - `ACCESS_TEAM_DOMAIN`: Cloudflare Access team URL.
 - `ACCESS_AUD`: Access application audience tag.
 
+Current Access application:
+
+- Team domain: `https://proud-term-65c0.cloudflareaccess.com`
+- Audience: `563dec62cb94746a7402a2bb4104ba97967be129ac72f0ccbae11a8e344e0dba`
+- Protected hostname: `guard.larkvine.org`
+
 Create a self-hosted Cloudflare Access application for `guard.larkvine.org`, add an Allow
 policy for the operator identity, then copy its team domain and audience tag into the
 Worker variables. The Worker independently verifies every Access JWT against Cloudflare's
@@ -55,6 +61,12 @@ The full runtime was deployed and live-tested on 2026-09-07:
   a real inference request with HTTP 200 and a provider response ID.
 - The Durable Object reconciled the request and the agent was disabled immediately.
 - The temporary bootstrap secret was deleted; only `ORBIO_GUARD_UPSTREAM_KEY` remains.
+- Cloudflare Access redirects unauthenticated operator requests and direct `workers.dev`
+  bypass attempts fail with `403 ACCESS_REQUIRED`.
+- The persistent `Cloudflare primary agent` is limited to `$5` per UTC day and `$0.50`
+  per request for `openai/*` and `anthropic/*`. Its one-time token is stored in macOS
+  Keychain under service `orbio-guard-cloudflare-agent`; only its hash is in Durable
+  Object state.
 
 Nested custom-domain DNS may remain negatively cached by a workstation resolver shortly
 after first deployment. Cloudflare authoritative DNS and `1.1.1.1` should be used to
