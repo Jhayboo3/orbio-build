@@ -7,6 +7,7 @@ import type { UpstreamKeyStore } from "../upstream/key-store.js";
 import { connectOrbioMcp, type OrbioMcpSession } from "./mcp-client.js";
 import { extractCreatedOrbioKey } from "./key-result.js";
 import {
+  orbioBalanceSchema,
   orbioKeyStatusSchema,
   parseStructuredToolResult,
 } from "./results.js";
@@ -82,6 +83,61 @@ export class OrbioKeyLifecycleService {
       await session.callTool("orbio_revoke_key");
       await this.keyStore.clear();
       await this.ledger.record({ type: "KEY_REVOKED" });
+    } finally {
+      await session.close();
+    }
+  }
+
+  async migrateLegacyKey(): Promise<{
+    migratedUsd: number;
+    spendableBalanceUsd: number;
+  }> {
+    const session = await this.connect();
+    try {
+      const currentStatus = parseStructuredToolResult(
+        await session.callTool("orbio_get_key_status"),
+        orbioKeyStatusSchema,
+      );
+      if (!currentStatus.legacy || currentStatus.legacy.disabled) {
+        throw new Error("No active legacy OpenRouter key is available to migrate.");
+      }
+
+      const migratedUsd = currentStatus.legacy.remainingUsd;
+      const previousBalance = parseStructuredToolResult(
+        await session.callTool("orbio_get_balance"),
+        orbioBalanceSchema,
+      );
+      await session.callTool("orbio_delete_key");
+      const updatedStatus = parseStructuredToolResult(
+        await session.callTool("orbio_get_key_status"),
+        orbioKeyStatusSchema,
+      );
+      if (updatedStatus.legacy && !updatedStatus.legacy.disabled) {
+        throw new Error("Orbio did not report the legacy key as disabled after migration.");
+      }
+
+      await this.ledger.record({
+        amountMicroUsd: Math.round(migratedUsd * 1_000_000).toString(),
+        type: "LEGACY_KEY_DELETED",
+      });
+
+      const balance = parseStructuredToolResult(
+        await session.callTool("orbio_get_balance"),
+        orbioBalanceSchema,
+      );
+      const expectedBalanceMicroUsd =
+        BigInt(previousBalance.balance.microUsd) +
+        BigInt(Math.round(migratedUsd * 1_000_000));
+      if (BigInt(balance.balance.microUsd) < expectedBalanceMicroUsd) {
+        throw new Error(
+          `Legacy key was disabled, but the spendable balance did not increase by the expected $${migratedUsd.toFixed(6)}. Check Orbio account status before retrying any operation.`,
+        );
+      }
+
+      return {
+        migratedUsd,
+        spendableBalanceUsd: balance.balance.usd,
+      };
     } finally {
       await session.close();
     }

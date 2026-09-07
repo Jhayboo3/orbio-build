@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-rc.3 - 2026-09-07
+
+### Added
+
+- Guarded migration of remaining legacy OpenRouter-key credit into the current Orbio
+  account balance, with irreversible-operation confirmation and metadata-only auditing.
+- Post-migration verification of both legacy-key disablement and the expected spendable
+  balance increase.
+
+### Verified
+
+- 57 automated tests, production build, desktop/mobile Chromium rendering, and dependency
+  audit.
+- Live Orbio status reports an active gateway key and spendable inference credit.
+- Explicit live key rotation replaced the stale local vault copy and recorded only the
+  new key fingerprint.
+- A limited `openai/gpt-4o-mini` request completed through the Guard proxy with HTTP 200,
+  confirmed $0.000007 of spend, and the temporary agent was disabled immediately.
+
 ## 0.1.0-rc.2 - 2026-09-06
 
 ### Added

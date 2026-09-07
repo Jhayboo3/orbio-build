@@ -1,6 +1,6 @@
 # Orbio Guard implementation plan
 
-Updated: 2026-09-06
+Updated: 2026-09-07
 
 This is the build guide and delivery checklist for **Orbio Guard**: a local-first
 credit-control layer between AI agents and Orbio/OpenRouter. It converts the product
@@ -20,13 +20,13 @@ and release criteria.
   reservation/confirm/release accounting are implemented. Policy/spend ledger events
   remain for the proxy milestone.
 - **Phase 3 - In progress:** the owner-only key vault and MCP-backed guarded
-  create/rotate/revoke commands are implemented. Live key creation is verified; live
-  rotation and revoke remain intentionally unexecuted.
+  create/rotate/revoke commands are implemented. Live key creation and rotation are
+  verified; live revoke remains intentionally unexecuted.
 - **Phase 4 - Proxy core complete:** local-only Chat Completions, Responses, and
   Anthropic Messages enforce Guard identity and policy, reserve spend, isolate the Orbio
   key, reconcile buffered/SSE provider cost, and release unpriced failures. Crash
-  recovery remains deferred. A live request reached the gateway but returned `402` because the
-  connected account currently has no spendable credit.
+  recovery remains deferred. A limited live `openai/gpt-4o-mini` request completed
+  through Guard with HTTP 200 and provider-reported spend reconciliation.
 - **Ledger - Core complete:** metadata-only agent, policy, budget, request, upstream,
   and key events are persisted without prompts, responses, or raw credentials.
 - **Phase 6 - Dashboard complete:** responsive landing/dashboard views show masked live
@@ -44,19 +44,18 @@ and release criteria.
 - **Phase 8 - Packaging complete:** release checks, health/readiness endpoints, GitHub
   Actions CI, a non-root Node 24 image, localhost-only Compose profile, security policy,
   deployment guide, and submission checklist are implemented.
-- **Validation:** typecheck, fifty-five automated tests, production build, desktop/mobile
+- **Validation:** typecheck, fifty-seven automated tests, production build, desktop/mobile
   Playwright rendering with zero browser errors or horizontal overflow,
   mock-upstream proxy integration, live OAuth discovery, authenticated reconnect,
   read-only status calls, isolated CLI workflow, npm audit, Docker build, non-root
   container startup, dashboard serving, and health/readiness smoke checks pass.
-- **Submission blockers:** the connected account has no spendable inference credit, the
-  repository is intentionally private, and live inference cannot complete until credit
-  is available. Submission-length synthetic pitch and technical videos are ready;
-  personal re-narration is optional.
+- **Submission blockers:** the repository is intentionally private and the GitHub release
+  remains a draft. Live rotation and inference are verified. Submission-length synthetic
+  pitch and technical videos are ready; personal re-narration is optional.
 - **Submission materials prepared:** synthetic desktop/mobile screenshots, architecture
   diagrams, timed pitch and technical scripts, troubleshooting, security, deployment,
   and final submission guides are complete.
-- **Release candidate:** `v0.1.0-rc.2` prepared on September 6, 2026.
+- **Release candidate:** `v0.1.0-rc.3` prepared on September 7, 2026.
 
 ## 1. MVP outcome
 

@@ -47,6 +47,7 @@ export const ledgerEventSchema = z.object({
     "KEY_CREATED",
     "KEY_ROTATED",
     "KEY_REVOKED",
+    "LEGACY_KEY_DELETED",
   ]),
   agentId: z.string().nullable().optional(),
   requestId: z.string().nullable().optional(),

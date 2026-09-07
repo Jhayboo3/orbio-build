@@ -33,8 +33,10 @@ Rotation is explicit because the runtime `orbio_create_key` operation retires th
 existing account key in the same statement. Guard does not silently rotate during a
 normal create command.
 
-Live rotation has not yet been executed. The code path is covered with synthetic
-fixtures and must be rehearsed only when replacing the current key is acceptable.
+Live rotation was verified on 2026-09-07 after an explicit ownership decision. Guard
+replaced the stale local vault copy, recorded only the new fingerprint, and retained
+owner-only file permissions. Rotation remains destructive to any consumer holding the
+previous account key and must not be performed without confirming ownership.
 
 ## Revoke the account key
 
@@ -56,6 +58,20 @@ export ORBIO_GUARD_UPSTREAM_KEY="your-key"
 npm run dev -- key import
 unset ORBIO_GUARD_UPSTREAM_KEY
 ```
+
+## Migrate a legacy OpenRouter key
+
+Accounts provisioned before the Orbio gateway may still hold credit inside a legacy
+OpenRouter key. The runtime `orbio_delete_key` operation permanently disables that key
+and returns its unused amount to the account balance used by the current Orbio key.
+
+```bash
+npm run dev -- key migrate-legacy --yes
+```
+
+This operation is irreversible and requires `--yes`. Guard reads the legacy remainder,
+performs the MCP deletion, verifies the key is disabled, confirms the new spendable
+balance, and records only the migrated amount in the metadata ledger.
 
 ## Canonical gateway host
 

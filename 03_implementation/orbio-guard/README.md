@@ -146,7 +146,7 @@ Read `SECURITY.md` before using Guard outside a local development environment.
 orbio-guard doctor
 orbio-guard auth [--no-open]
 orbio-guard status
-orbio-guard key import|create|status|clear|revoke
+orbio-guard key import|create|status|clear|revoke|migrate-legacy
 orbio-guard agent add|list|pause|resume|disable|rotate-token
 orbio-guard policy show|set
 orbio-guard budget recover
@@ -166,7 +166,7 @@ docker build -t orbio-guard:release .
 The release gate currently includes:
 
 - Strict TypeScript checking.
-- 55 unit and integration tests.
+- 57 unit and integration tests.
 - Desktop and mobile Chromium rendering checks.
 - Production build and dependency audit.
 - Mock Chat Completions, Responses, Anthropic Messages, and SSE streaming checks.
@@ -197,12 +197,13 @@ The same release gate and Docker build pass in GitHub Actions.
   are verified.
 - The runtime tool contract currently differs from Orbio's public MCP page; Guard detects
   contract changes and keeps sanitized fixtures.
-- A live proxy request reached the authenticated gateway, but the connected account
-  returned `402 insufficient_quota`; spendable credit is required for a completed live
-  model response.
-- Live key rotation and revoke remain intentionally unexecuted.
+- Live key rotation is verified. Guard replaced the stale vault copy, exposed only the
+  new fingerprint, and retained owner-only permissions.
+- A limited live `openai/gpt-4o-mini` request completed through Guard with HTTP 200 and
+  confirmed provider-reported spend. The temporary agent was disabled immediately.
+- Live key revoke remains intentionally unexecuted.
 - The repository remains private by operator request and must be made public deliberately
   before a public Build Week submission.
 - The supplied deployment is localhost-oriented, not a public multi-tenant service.
 
-Current release candidate: `v0.1.0-rc.2`, prepared September 6, 2026.
+Current release candidate: `v0.1.0-rc.3`, prepared September 7, 2026.

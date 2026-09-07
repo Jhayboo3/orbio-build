@@ -1,6 +1,6 @@
 # Orbio MCP integration notes
 
-Verified against the official Orbio documentation and endpoint on 2026-09-06.
+Verified against the official Orbio documentation and endpoint through 2026-09-07.
 
 ## Endpoint
 
@@ -74,7 +74,7 @@ OAuth discovery.
 ## Still requiring authenticated capture
 
 - Sanitized result/error fixtures for revoke and legacy-key deletion.
-- Live rotation and revocation behavior.
+- Live revocation behavior.
 - Token expiry and refresh behavior in a real session.
 
 ## Read-only result schemas
@@ -109,9 +109,14 @@ The key-status gateway URL redirects from the bare domain to `www`. Guard canoni
 the host before forwarding because authorization headers are not preserved across that
 origin redirect.
 
-A live proxy request subsequently reached the authenticated gateway and returned
-`402 insufficient_quota`. This confirms routing and authentication but means a complete
-model-response smoke test requires available Orbio account credit.
+A live rotation on 2026-09-07 replaced a stale local vault copy after explicit operator
+authorization. Guard stored the replacement with owner-only permissions and emitted only
+its fingerprint.
+
+A subsequent limited `openai/gpt-4o-mini` request completed through the Guard proxy with
+HTTP 200. Guard reconciled the provider-reported cost as seven micro-dollars and disabled
+the temporary verification agent immediately afterward. No prompt, response, or raw
+credential was persisted in the metadata ledger.
 
 Do not create production parsing logic for these fields until sanitized authenticated
 fixtures have been captured.

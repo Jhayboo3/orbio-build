@@ -114,8 +114,8 @@ accounting.
   `ORBIO_GUARD_DEFAULT_RESERVATION_USD` conservatively for the expected workload.
 - Request bodies default to a 1 MiB maximum.
 - One Guard proxy process may use a state directory at a time.
-- Automatic creation/rotation of the upstream key through MCP remains pending live
-  mutating-tool fixture capture.
+- MCP-backed key creation and rotation are live-verified; revoke still requires deliberate
+  live verification when stopping the active key is acceptable.
 - Reconciliation after a process crash or uncertain upstream timeout remains pending.
 
 ## Error codes

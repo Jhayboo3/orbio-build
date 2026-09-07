@@ -50,9 +50,53 @@ describe("OrbioKeyLifecycleService", () => {
     await expect(setup.keyStore.status()).resolves.toEqual({ configured: false });
     expect(setup.callTool).toHaveBeenCalledWith("orbio_revoke_key");
   });
+
+  it("migrates an active legacy key and records only the amount", async () => {
+    const setup = await createSetup(false, true);
+    const result = await setup.service.migrateLegacyKey();
+
+    expect(result).toEqual({
+      migratedUsd: 51.5,
+      spendableBalanceUsd: 51.5,
+    });
+    expect(setup.callTool).toHaveBeenCalledWith("orbio_delete_key");
+    expect(setup.callTool.mock.calls.map(([name]) => name)).toEqual([
+      "orbio_get_key_status",
+      "orbio_get_balance",
+      "orbio_delete_key",
+      "orbio_get_key_status",
+      "orbio_get_balance",
+    ]);
+    expect(await setup.ledger.list()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          amountMicroUsd: "51500000",
+          type: "LEGACY_KEY_DELETED",
+        }),
+      ]),
+    );
+  });
+
+  it("reports when deletion succeeds without the expected balance increase", async () => {
+    const setup = await createSetup(false, true, 0);
+
+    await expect(setup.service.migrateLegacyKey()).rejects.toThrow(
+      "spendable balance did not increase",
+    );
+    expect(await setup.ledger.list()).toEqual([
+      expect.objectContaining({
+        amountMicroUsd: "51500000",
+        type: "LEGACY_KEY_DELETED",
+      }),
+    ]);
+  });
 });
 
-async function createSetup(hasKey: boolean) {
+async function createSetup(
+  hasKey: boolean,
+  hasLegacy = false,
+  migratedBalanceUsd = 51.5,
+) {
   const stateDirectory = await mkdtemp(join(tmpdir(), "orbio-key-life-"));
   const config: GuardConfig = {
     defaultReservationMicroUsd: "250000",
@@ -75,6 +119,9 @@ async function createSetup(hasKey: boolean) {
   const ledger = new LedgerService(new GuardStateStore(stateDirectory));
   const callTool = vi.fn(async (name: string) => {
     if (name === "orbio_get_key_status") {
+      const legacyDisabled = callTool.mock.calls.some(
+        ([calledName]) => calledName === "orbio_delete_key",
+      );
       return {
         structuredContent: {
           hasKey,
@@ -82,7 +129,35 @@ async function createSetup(hasKey: boolean) {
           createdAt: hasKey ? "2026-09-06T00:00:00.000Z" : null,
           lastUsedAt: null,
           baseUrl: "https://orbio.so/api/v1",
-          legacy: null,
+          legacy: hasLegacy
+            ? {
+                label: "synthetic legacy",
+                limitUsd: 100,
+                usageUsd: 48.5,
+                remainingUsd: 51.5,
+                disabled: legacyDisabled,
+                readable: !legacyDisabled,
+              }
+            : null,
+        },
+      };
+    }
+    if (name === "orbio_get_balance") {
+      const legacyDeleted = callTool.mock.calls.some(
+        ([calledName]) => calledName === "orbio_delete_key",
+      );
+      const balanceUsd = legacyDeleted ? migratedBalanceUsd : 0;
+      return {
+        structuredContent: {
+          wallets: ["0x0000000000000000000000000000000000000000"],
+          accrued: { usd: 100, microUsd: "100000000" },
+          purchased: { usd: 0, microUsd: "0" },
+          spent: { usd: 48.5, microUsd: "48500000" },
+          claimed: { usd: 100, microUsd: "100000000" },
+          balance: {
+            usd: balanceUsd,
+            microUsd: Math.round(balanceUsd * 1_000_000).toString(),
+          },
         },
       };
     }

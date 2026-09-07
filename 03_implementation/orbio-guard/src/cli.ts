@@ -40,7 +40,7 @@ const program = new Command();
 program
   .name("orbio-guard")
   .description("Local-first credit controls for Orbio-powered AI agents.")
-  .version("0.1.0-rc.2");
+  .version("0.1.0-rc.3");
 
 program
   .command("doctor")
@@ -445,6 +445,22 @@ keyCommand
     }
     await keyLifecycleService().revoke();
     console.log("Orbio key revoked and local copy removed.");
+  });
+
+keyCommand
+  .command("migrate-legacy")
+  .description("Disable the legacy OpenRouter key and return its remainder to Orbio.")
+  .option("--yes", "Confirm the irreversible legacy-key deletion.")
+  .action(async ({ yes }: { yes?: boolean }) => {
+    if (!yes) {
+      throw new Error(
+        "Re-run with --yes to permanently disable the legacy OpenRouter key.",
+      );
+    }
+    const result = await keyLifecycleService().migrateLegacyKey();
+    console.log(
+      `Legacy key migrated. $${result.migratedUsd.toFixed(6)} returned; spendable balance is now $${result.spendableBalanceUsd.toFixed(6)}.`,
+    );
   });
 
 program

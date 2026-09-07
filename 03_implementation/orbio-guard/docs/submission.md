@@ -1,6 +1,6 @@
 # Build Week submission checklist
 
-Updated: 2026-09-06
+Updated: 2026-09-07
 
 ## Positioning
 
@@ -74,9 +74,10 @@ without printing wallet balances or credentials. Use `node scripts/submission-ch
 
 ## Honest limitations to disclose
 
-- The connected account currently has no spendable Orbio credit, so the live gateway
-  returns `402 insufficient_quota` for inference requests.
-- Live key creation is verified; live rotation and revoke are intentionally unexecuted.
+- Live key creation and rotation are verified; live revoke remains intentionally
+  unexecuted.
+- A limited live `openai/gpt-4o-mini` request completed through Guard with HTTP 200 and
+  provider-reported spend reconciliation; its temporary agent was disabled immediately.
 - Cursor setup is guided rather than automatically applied.
 - Crash recovery confirms or releases stale reservations but cannot prove provider
   billing outcome.

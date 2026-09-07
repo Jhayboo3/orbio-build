@@ -30,6 +30,10 @@ strip the authorization header.
 Authentication and routing succeeded, but the Orbio account has no spendable credit.
 Check `orbio-guard status` and fund or claim credit through the supported Orbio flow.
 
+If `status` shows spendable balance `$0` but a legacy OpenRouter key still has remaining
+credit, migrate it with `orbio-guard key migrate-legacy --yes`. This permanently disables
+the old key and returns its remainder to the current Orbio balance.
+
 ## `/readyz` returns `503`
 
 The proxy is running but no upstream key is configured. Use MCP-backed creation:
