@@ -18,7 +18,7 @@ encrypted per tenant.
 - Access-protected app: `https://guard.larkvine.org/dashboard/`
 - Inference health: `https://api.guard.larkvine.org/readyz`
 - Repository: `https://github.com/Jhayboo3/orbio-build`
-- Current release: `https://github.com/Jhayboo3/orbio-build/releases/tag/v0.1.0-rc.5`
+- Current release: `https://github.com/Jhayboo3/orbio-build/releases/tag/v0.1.0-rc.6`
 
 ## Judge demo
 

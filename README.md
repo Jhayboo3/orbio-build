@@ -10,7 +10,7 @@ only auditing. OAuth tokens and gateway keys remain encrypted per tenant.
 [Live product](https://orbio-guard.pages.dev) ·
 [Access-protected app](https://guard.larkvine.org/dashboard/) ·
 [Developer setup](https://orbio-guard.pages.dev/getting-started/) ·
-[v0.1.0-rc.5](https://github.com/Jhayboo3/orbio-build/releases/tag/v0.1.0-rc.5)
+[v0.1.0-rc.6](https://github.com/Jhayboo3/orbio-build/releases/tag/v0.1.0-rc.6)
 
 ![Orbio Guard](03_implementation/orbio-guard/docs/assets/landing-desktop.png)
 

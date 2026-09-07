@@ -224,4 +224,4 @@ Codex text/tool round trips.
 - The local container remains localhost-oriented; the Cloudflare Worker is the hardened
   multi-tenant deployment.
 
-Current release candidate: `v0.1.0-rc.5`, prepared September 7, 2026.
+Current release candidate: `v0.1.0-rc.6`, prepared September 7, 2026.
