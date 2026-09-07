@@ -73,6 +73,10 @@ supports_websockets = false
 
 Export `ORBIO_GUARD_AGENT_TOKEN` before launching Codex.
 
+Guard adapts Codex's Responses protocol to Orbio's Chat Completions route. Text and
+function-tool round trips are supported; developers should retain
+`wire_api = "responses"`.
+
 ### Claude Code
 
 ```bash

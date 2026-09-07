@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   activeCloudAgents,
+  chatResponseToResponsesSse,
   evaluateCloudPolicy,
   extractCloudCostMicroUsd,
   extractCloudStreamCostMicroUsd,
   formatCloudUsd,
   latestCloudKeyUse,
   matchesCloudModel,
+  responsesToChatRequest,
   type CloudAgent,
 } from "../../src/cloudflare/core.js";
 
@@ -54,5 +56,51 @@ describe("Cloudflare Guard core", () => {
       { timestamp: "2026-09-07T02:00:00.000Z", type: "REQUEST_ALLOWED" },
       { timestamp: "2026-09-07T01:00:00.000Z", type: "SPEND_CONFIRMED" },
     ])).toBe("2026-09-07T01:00:00.000Z");
+  });
+
+  it("converts Codex Responses messages and function tools to Chat Completions", () => {
+    expect(responsesToChatRequest({
+      model: "openai/gpt-4o-mini",
+      instructions: "Be concise.",
+      input: [
+        { type: "message", role: "user", content: [{ type: "input_text", text: "Hello" }] },
+        { type: "function_call_output", call_id: "call-1", output: "done" },
+      ],
+      tools: [{ type: "function", name: "read_file", description: "Read", parameters: { type: "object" }, strict: true }],
+    })).toEqual({
+      model: "openai/gpt-4o-mini",
+      messages: [
+        { role: "developer", content: "Be concise." },
+        { role: "user", content: "Hello" },
+        { role: "tool", tool_call_id: "call-1", content: "done" },
+      ],
+      stream: false,
+      tools: [{ type: "function", function: { name: "read_file", description: "Read", parameters: { type: "object" }, strict: true } }],
+    });
+  });
+
+  it("converts assistant text and usage to Responses SSE", () => {
+    const stream = chatResponseToResponsesSse({
+      id: "gen-1",
+      created: 1_788_771_926,
+      model: "openai/gpt-4o-mini",
+      choices: [{ message: { role: "assistant", content: "Connected" } }],
+      usage: { prompt_tokens: 11, completion_tokens: 2, total_tokens: 13, cost: 0.00000285 },
+    });
+    expect(stream).toContain("event: response.output_text.delta");
+    expect(stream).toContain('"delta":"Connected"');
+    expect(stream).toContain('"cost":0.00000285');
+    expect(stream).toContain("event: response.completed");
+  });
+
+  it("converts Chat Completions tool calls to Responses function events", () => {
+    const stream = chatResponseToResponsesSse({
+      id: "gen-tool",
+      model: "openai/gpt-4o-mini",
+      choices: [{ message: { role: "assistant", content: null, tool_calls: [{ id: "call-1", type: "function", function: { name: "read_file", arguments: '{"path":"a.txt"}' } }] } }],
+    });
+    expect(stream).toContain("event: response.function_call_arguments.done");
+    expect(stream).toContain('"name":"read_file"');
+    expect(stream).toContain('"call_id":"call-1"');
   });
 });

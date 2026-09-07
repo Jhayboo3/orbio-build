@@ -2,11 +2,13 @@ import { DurableObject } from "cloudflare:workers";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import {
   activeCloudAgents,
+  chatResponseToResponsesSse,
   evaluateCloudPolicy,
   extractCloudCostMicroUsd,
   extractCloudStreamCostMicroUsd,
   formatCloudUsd,
   latestCloudKeyUse,
+  responsesToChatRequest,
   validateCloudModelPatterns,
   type CloudAgent,
   type CloudAgentStatus,
@@ -442,12 +444,17 @@ async function proxyInference(
       return guardError(status, authorization.error.code, authorization.error.message);
     }
     const reservation = authorization.reservation!;
-    const upstreamPath = ROUTES.get(new URL(request.url).pathname)!;
+    const requestPath = new URL(request.url).pathname;
+    const adaptsResponses = requestPath === "/v1/responses";
+    const upstreamPath = adaptsResponses ? "chat/completions" : ROUTES.get(requestPath)!;
     const upstreamUrl = new URL(upstreamPath, trailingSlash(env.ORBIO_GUARD_UPSTREAM_BASE_URL));
+    const upstreamBodyText = adaptsResponses
+      ? JSON.stringify(responsesToChatRequest(body))
+      : bodyText;
     let upstream: Response;
     try {
       upstream = await fetch(upstreamUrl, {
-        body: bodyText,
+        body: upstreamBodyText,
         headers: {
           accept: request.headers.get("accept") ?? "application/json",
           authorization: `Bearer ${env.ORBIO_GUARD_UPSTREAM_KEY}`,
@@ -462,6 +469,24 @@ async function proxyInference(
       await release(coordinator, reservation.id);
       await recordUpstreamError(coordinator, authorization.agent!.id, body.model, requestId);
       return guardError(502, "UPSTREAM_ERROR", "The upstream request failed.");
+    }
+    if (adaptsResponses) {
+      const chatBody = await upstream.text();
+      if (!upstream.ok) {
+        await release(coordinator, reservation.id);
+        await recordUpstreamError(coordinator, authorization.agent!.id, body.model, requestId, upstream.status);
+        return copyUpstream(upstream, chatBody, requestId);
+      }
+      const cost = extractCloudCostMicroUsd(chatBody) ?? reservation.amountMicroUsd;
+      await confirm(coordinator, reservation.id, cost);
+      const responseBody = chatResponseToResponsesSse(JSON.parse(chatBody));
+      return new Response(responseBody, {
+        headers: {
+          "cache-control": "no-store",
+          "content-type": "text/event-stream; charset=utf-8",
+          "x-orbio-guard-request-id": requestId,
+        },
+      });
     }
     if (body.stream === true && upstream.ok && upstream.body) {
       const [clientStream, auditStream] = upstream.body.tee();

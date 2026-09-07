@@ -14,11 +14,14 @@
   Cursor, VS Code, and JetBrains, available as a hosted guide and repository reference.
 - Accessible copy controls for every onboarding command and configuration block, with
   language labels, clipboard fallback, and visible success feedback.
+- Responses-to-Chat protocol adaptation for Codex, including SSE response events,
+  function tools, tool outputs, usage, and provider-cost reconciliation.
 
 ### Verified
 
-- 63 automated tests and desktop/mobile cloud-console rendering.
+- 66 automated tests and desktop/mobile cloud-console rendering.
 - Two disabled smoke identities archived while preserving their metadata-only history.
+- Real Codex text and shell-tool round trips completed through Guard and Orbio.
 
 ## 0.1.0-rc.4 - 2026-09-07
 

@@ -82,6 +82,9 @@ The full runtime was deployed and live-tested on 2026-09-07:
   Object state.
 - The two temporary smoke agents are archived from the active roster; their metadata-only
   history remains available for audit.
+- Codex `v0.153.4` completed both a text response and a read-only shell-tool round trip.
+  Guard translates Codex Responses requests and SSE events to Orbio's available Chat
+  Completions route while retaining model policy, reservation, and cost reconciliation.
 
 Nested custom-domain DNS may remain negatively cached by a workstation resolver shortly
 after first deployment. Cloudflare authoritative DNS and `1.1.1.1` should be used to
