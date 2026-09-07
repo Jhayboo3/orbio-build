@@ -20,7 +20,7 @@ npm run dev -- agent add \
   --project "orbio-demo" \
   --daily-budget 5 \
   --max-request 0.75 \
-  --models "openai/gpt-*,anthropic/claude-sonnet"
+  --models "openai/gpt-*,anthropic/claude-sonnet-5"
 ```
 
 The command prints a Guard token once. Only its SHA-256 hash is stored. The raw token
@@ -50,7 +50,7 @@ npm run dev -- policy set <agent-id> --models "openai/*"
 
 Model patterns support exact IDs, `*`, or a single trailing wildcard. Examples:
 
-- `anthropic/claude-sonnet` matches one exact model.
+- `anthropic/claude-sonnet-5` matches one exact model.
 - `openai/gpt-*` matches model IDs beginning with `openai/gpt-`.
 - `*` allows every model.
 

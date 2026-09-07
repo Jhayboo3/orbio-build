@@ -8,6 +8,7 @@ import {
   formatCloudUsd,
   latestCloudKeyUse,
   matchesCloudModel,
+  orbioModelId,
   responsesToChatRequest,
   type CloudAgent,
 } from "../../src/cloudflare/core.js";
@@ -77,6 +78,11 @@ describe("Cloudflare Guard core", () => {
       stream: false,
       tools: [{ type: "function", function: { name: "read_file", description: "Read", parameters: { type: "object" }, strict: true } }],
     });
+  });
+
+  it("maps native Codex slugs to provider-qualified Orbio IDs", () => {
+    expect(orbioModelId("gpt-5.6-sol")).toBe("openai/gpt-5.6-sol");
+    expect(orbioModelId("anthropic/claude-sonnet-5")).toBe("anthropic/claude-sonnet-5");
   });
 
   it("converts assistant text and usage to Responses SSE", () => {

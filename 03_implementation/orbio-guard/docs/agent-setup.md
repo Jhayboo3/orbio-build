@@ -29,7 +29,7 @@ curl https://api.guard.larkvine.org/v1/chat/completions \
   -H "Authorization: Bearer $ORBIO_GUARD_AGENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai/gpt-4o-mini",
+    "model": "openai/gpt-5.6-sol",
     "messages": [{"role": "user", "content": "Reply with: connected"}]
   }'
 ```
@@ -59,7 +59,7 @@ budget rules before replacing it with the encrypted Orbio credential upstream.
 Add this provider to user-level `~/.codex/config.toml`:
 
 ```toml
-model = "openai/gpt-4o-mini"
+model = "gpt-5.6-sol"
 model_provider = "orbio_guard"
 
 [model_providers.orbio_guard]
@@ -75,7 +75,8 @@ Export `ORBIO_GUARD_AGENT_TOKEN` before launching Codex.
 
 Guard adapts Codex's Responses protocol to Orbio's Chat Completions route. Text and
 function-tool round trips are supported; developers should retain
-`wire_api = "responses"`.
+`wire_api = "responses"`. Codex uses the native metadata slug `gpt-5.6-sol`; Guard maps
+it to Orbio's `openai/gpt-5.6-sol` model ID.
 
 ### Claude Code
 
@@ -83,7 +84,7 @@ function-tool round trips are supported; developers should retain
 export ORBIO_GUARD_AGENT_TOKEN="og_agent_..."
 export ANTHROPIC_BASE_URL="https://api.guard.larkvine.org"
 export ANTHROPIC_AUTH_TOKEN="$ORBIO_GUARD_AGENT_TOKEN"
-export ANTHROPIC_MODEL="anthropic/claude-sonnet-4"
+export ANTHROPIC_MODEL="anthropic/claude-sonnet-5"
 claude
 ```
 
@@ -126,4 +127,5 @@ npm run dev -- setup cursor --agent <agent-id> --model <model-id>
 ```
 
 These commands validate the selected model against the existing local agent policy and
-never print or read back its raw token.
+never print or read back its raw token. Pass the provider-qualified Orbio ID, such as
+`openai/gpt-5.6-sol`; the Codex generator writes the native `gpt-5.6-sol` metadata slug.

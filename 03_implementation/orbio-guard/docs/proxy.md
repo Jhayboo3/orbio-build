@@ -62,7 +62,7 @@ curl http://127.0.0.1:4318/v1/chat/completions \
   -H "Authorization: Bearer $ORBIO_GUARD_AGENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai/gpt-6",
+    "model": "openai/gpt-5.6-sol",
     "messages": [{"role": "user", "content": "Say hello"}]
   }'
 ```
@@ -78,7 +78,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "openai/gpt-6",
+  model: "openai/gpt-5.6-sol",
   messages: [{ role: "user", content: "Say hello" }],
 });
 ```
@@ -87,7 +87,7 @@ The Responses API uses the same base URL and Guard token:
 
 ```ts
 const response = await client.responses.create({
-  model: "openai/gpt-6",
+  model: "openai/gpt-5.6-sol",
   input: "Say hello",
 });
 ```

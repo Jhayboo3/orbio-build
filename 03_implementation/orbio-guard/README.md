@@ -82,6 +82,11 @@ Codex uses a user-level Responses provider. Claude Code uses Anthropic gateway
 environment variables. Cursor remains guided/manual when its installed build exposes a
 custom OpenAI base URL.
 
+Current live-catalog examples use `openai/gpt-5.6-sol` for API clients,
+`gpt-5.6-sol` for Codex metadata compatibility, and `anthropic/claude-sonnet-5` for
+Claude Code. Query `GET https://api.guard.larkvine.org/v1/models` with an active agent
+token for Orbio's current authenticated catalog.
+
 ## Quick Start
 
 Requirements: Node.js 22 or newer and an Orbio account for live MCP/key operations.
@@ -171,7 +176,7 @@ docker build -t orbio-guard:release .
 The release gate currently includes:
 
 - Strict TypeScript checking.
-- 66 unit and integration tests.
+- 67 unit and integration tests.
 - Desktop and mobile Chromium rendering checks.
 - Production build and dependency audit.
 - Mock Chat Completions, Responses, Anthropic Messages, and SSE streaming checks.
@@ -184,6 +189,7 @@ The same release gate and Docker build pass in GitHub Actions.
 - `docs/architecture.md` - components, trust boundaries, and request sequence.
 - `docs/agent-policies.md` - identities, model rules, and budgets.
 - `docs/agent-setup.md` - Codex, Claude Code, and Cursor configuration.
+- `docs/models.md` - live model discovery and client-specific model naming.
 - `docs/key-lifecycle.md` - create, rotate, revoke, and recovery behavior.
 - `docs/proxy.md` - protocols, accounting, errors, and limitations.
 - `docs/dashboard.md` - views, privacy, refresh, and visual verification.

@@ -123,12 +123,16 @@ export function responsesToChatRequest(raw: unknown): Record<string, unknown> {
     ? input.tools.flatMap((tool) => responseToolToChat(tool))
     : [];
   return {
-    model: input.model,
+    model: orbioModelId(input.model),
     messages,
     stream: false,
     ...(tools.length ? { tools } : {}),
     ...(input.tool_choice && input.tool_choice !== "auto" ? { tool_choice: input.tool_choice } : {}),
   };
+}
+
+export function orbioModelId(model: string): string {
+  return model.includes("/") ? model : `openai/${model}`;
 }
 
 export function chatResponseToResponsesSse(raw: unknown): string {

@@ -16,12 +16,16 @@
   language labels, clipboard fallback, and visible success feedback.
 - Responses-to-Chat protocol adaptation for Codex, including SSE response events,
   function tools, tool outputs, usage, and provider-cost reconciliation.
+- Authenticated Orbio model-catalog proxying and native Codex-slug normalization to
+  provider-qualified Orbio model IDs.
 
 ### Verified
 
-- 66 automated tests and desktop/mobile cloud-console rendering.
+- 67 automated tests and desktop/mobile cloud-console rendering.
 - Two disabled smoke identities archived while preserving their metadata-only history.
 - Real Codex text and shell-tool round trips completed through Guard and Orbio.
+- Authenticated catalog returned 430 models; Codex Doctor passed all 22 checks and a live
+  `gpt-5.6-sol` request completed without fallback metadata.
 
 ## 0.1.0-rc.4 - 2026-09-07
 

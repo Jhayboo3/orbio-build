@@ -85,6 +85,10 @@ The full runtime was deployed and live-tested on 2026-09-07:
 - Codex `v0.153.4` completed both a text response and a read-only shell-tool round trip.
   Guard translates Codex Responses requests and SSE events to Orbio's available Chat
   Completions route while retaining model policy, reservation, and cost reconciliation.
+- The authenticated Orbio catalog exposed 430 models. Guard proxies it at `/v1/models`
+  and maps Codex's `gpt-5.6-sol` metadata slug to Orbio's `openai/gpt-5.6-sol` ID.
+- Codex Doctor passed 22 checks with no fallback-metadata warning, and a live
+  `gpt-5.6-sol` session completed through Guard and Orbio.
 
 Nested custom-domain DNS may remain negatively cached by a workstation resolver shortly
 after first deployment. Cloudflare authoritative DNS and `1.1.1.1` should be used to

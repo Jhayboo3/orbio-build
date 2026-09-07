@@ -28,6 +28,9 @@ export function generateSetupGuide(input: {
     `If it was lost, run \`orbio-guard agent rotate-token ${input.agent.id}\`.`;
 
   if (input.target === "codex") {
+    const codexModel = input.model.startsWith("openai/")
+      ? input.model.slice("openai/".length)
+      : input.model;
     return {
       target: "codex",
       notes: [
@@ -36,7 +39,7 @@ export function generateSetupGuide(input: {
         "Guard supports the Responses API and SSE streaming required by current Codex custom providers.",
       ],
       snippet: [
-        `model = ${tomlString(input.model)}`,
+        `model = ${tomlString(codexModel)}`,
         'model_provider = "orbio_guard"',
         "",
         "[model_providers.orbio_guard]",

@@ -8,6 +8,7 @@ import {
   extractCloudStreamCostMicroUsd,
   formatCloudUsd,
   latestCloudKeyUse,
+  orbioModelId,
   responsesToChatRequest,
   validateCloudModelPatterns,
   type CloudAgent,
@@ -68,6 +69,17 @@ export class GuardCoordinator extends DurableObject<Env> {
     try {
       if (request.method === "POST" && url.pathname === "/authorize") {
         return Response.json(await this.authorize(await request.json()));
+      }
+      if (request.method === "POST" && url.pathname === "/authenticate") {
+        const input = await request.json<{ token?: unknown }>();
+        if (typeof input.token !== "string") throw new Error("Agent token is invalid.");
+        const tokenHash = await sha256(input.token);
+        const agent = (await this.read()).agents.find((candidate) =>
+          safeEqual(candidate.tokenHash, tokenHash));
+        if (!agent || agent.archivedAt || agent.status !== "active") {
+          return guardError(401, "INVALID_AGENT_TOKEN", "The Guard agent token is invalid.");
+        }
+        return Response.json({ agent: safeAgent(agent) });
       }
       if (request.method === "POST" && url.pathname === "/confirm") {
         const input = await request.json<{ confirmedMicroUsd: string; reservationId: string }>();
@@ -357,6 +369,9 @@ export default {
       if (request.method === "GET" && url.pathname === "/readyz") {
         return json({ status: env.ORBIO_GUARD_UPSTREAM_KEY ? "ready" : "not_ready" }, env.ORBIO_GUARD_UPSTREAM_KEY ? 200 : 503);
       }
+      if (request.method === "GET" && url.pathname === "/v1/models") {
+        return proxyModels(request, env, coordinator);
+      }
       if (request.method === "POST" && ROUTES.has(url.pathname)) {
         return proxyInference(request, env, coordinator, execution);
       }
@@ -429,8 +444,9 @@ async function proxyInference(
     if (typeof body.model !== "string") return guardError(400, "INVALID_REQUEST", "Request body is invalid.");
     const token = bearerToken(request);
     const estimatedCostMicroUsd = "50000";
+    const policyModel = orbioModelId(body.model);
     const authorizationResponse = await coordinator.fetch("https://guard.internal/authorize", {
-      body: JSON.stringify({ estimatedCostMicroUsd, model: body.model, requestId, token }),
+      body: JSON.stringify({ estimatedCostMicroUsd, model: policyModel, requestId, token }),
       method: "POST",
     });
     const authorization = await authorizationResponse.json<{
@@ -450,7 +466,7 @@ async function proxyInference(
     const upstreamUrl = new URL(upstreamPath, trailingSlash(env.ORBIO_GUARD_UPSTREAM_BASE_URL));
     const upstreamBodyText = adaptsResponses
       ? JSON.stringify(responsesToChatRequest(body))
-      : bodyText;
+      : JSON.stringify({ ...body, model: policyModel });
     let upstream: Response;
     try {
       upstream = await fetch(upstreamUrl, {
@@ -467,14 +483,14 @@ async function proxyInference(
       });
     } catch (error) {
       await release(coordinator, reservation.id);
-      await recordUpstreamError(coordinator, authorization.agent!.id, body.model, requestId);
+      await recordUpstreamError(coordinator, authorization.agent!.id, policyModel, requestId);
       return guardError(502, "UPSTREAM_ERROR", "The upstream request failed.");
     }
     if (adaptsResponses) {
       const chatBody = await upstream.text();
       if (!upstream.ok) {
         await release(coordinator, reservation.id);
-        await recordUpstreamError(coordinator, authorization.agent!.id, body.model, requestId, upstream.status);
+        await recordUpstreamError(coordinator, authorization.agent!.id, policyModel, requestId, upstream.status);
         return copyUpstream(upstream, chatBody, requestId);
       }
       const cost = extractCloudCostMicroUsd(chatBody) ?? reservation.amountMicroUsd;
@@ -499,13 +515,37 @@ async function proxyInference(
       await confirm(coordinator, reservation.id, cost ?? reservation.amountMicroUsd);
     } else {
       await release(coordinator, reservation.id);
-      await recordUpstreamError(coordinator, authorization.agent!.id, body.model, requestId, upstream.status);
+      await recordUpstreamError(coordinator, authorization.agent!.id, policyModel, requestId, upstream.status);
     }
     return copyUpstream(upstream, upstreamBody, requestId);
   } catch (error) {
     if (error instanceof SyntaxError) return guardError(400, "INVALID_REQUEST", "Request body is invalid.");
     return guardError(401, "INVALID_AGENT_TOKEN", errorMessage(error));
   }
+}
+
+async function proxyModels(
+  request: Request,
+  env: Env,
+  coordinator: DurableObjectStub<GuardCoordinator>,
+): Promise<Response> {
+  let token: string;
+  try {
+    token = bearerToken(request);
+  } catch {
+    return guardError(401, "INVALID_AGENT_TOKEN", "The Guard agent token is invalid.");
+  }
+  const authentication = await coordinator.fetch("https://guard.internal/authenticate", {
+    body: JSON.stringify({ token }),
+    method: "POST",
+  });
+  if (!authentication.ok) {
+    return guardError(401, "INVALID_AGENT_TOKEN", "The Guard agent token is invalid.");
+  }
+  const response = await fetch(new URL("models", trailingSlash(env.ORBIO_GUARD_UPSTREAM_BASE_URL)), {
+    headers: { authorization: `Bearer ${env.ORBIO_GUARD_UPSTREAM_KEY}` },
+  });
+  return copyUpstream(response, response.body ?? "", crypto.randomUUID());
 }
 
 async function reconcileStream(

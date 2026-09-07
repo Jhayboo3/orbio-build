@@ -18,6 +18,8 @@ describe("generateSetupGuide", () => {
     });
 
     expect(guide.snippet).toContain('base_url = "http://127.0.0.1:4318/v1"');
+    expect(guide.snippet).toContain('model = "gpt-test"');
+    expect(guide.snippet).not.toContain('model = "openai/gpt-test"');
     expect(guide.snippet).toContain('wire_api = "responses"');
     expect(guide.snippet).toContain('env_key = "ORBIO_GUARD_AGENT_TOKEN"');
     expect(guide.snippet).not.toContain(agent.tokenHash);
