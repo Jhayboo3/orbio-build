@@ -274,7 +274,7 @@ describe("OpenAI-compatible proxy", () => {
     const landing = await fetch(setup.proxyUrl);
     expect(landing.status).toBe(200);
     expect(landing.headers.get("content-security-policy")).toContain("default-src 'self'");
-    expect(await landing.text()).toContain("One wallet.");
+    expect(await landing.text()).toContain("Connect Orbio.");
 
     const dashboard = await fetch(`${setup.proxyUrl}/dashboard`);
     expect(dashboard.status).toBe(200);

@@ -1,15 +1,15 @@
 # Security policy
 
-Updated: 2026-09-06
+Updated: 2026-09-07
 
 ## Security model
 
-Orbio Guard is a local-first MVP that protects one account-level Orbio key behind
-separate Guard agent identities, policy checks, atomic budget reservations, and a
-metadata-only ledger.
+Orbio Guard protects Orbio account keys behind separate agent identities, policy checks,
+atomic budget reservations, and a metadata-only ledger.
 
-The current release is intended for one trusted operator on one machine or a
-localhost-only container deployment. It is not a hardened public multi-tenant service.
+The Cloudflare runtime is multi-tenant: Access identity maps to one isolated Durable
+Object, and OAuth tokens plus gateway keys are encrypted with AES-GCM before storage. The
+Node and container runtime remains localhost-oriented.
 
 ## Secret handling
 
@@ -21,6 +21,8 @@ localhost-only container deployment. It is not a hardened public multi-tenant se
   successful key-vault write.
 - Logs, dashboard APIs, tests, and ledger events exclude raw credentials, authorization
   headers, cookies, prompts, and model responses.
+- Cloud tenants store encrypted OAuth tokens and gateway keys; the encryption key is a
+  Worker secret backed up separately in the operator's secure recovery store.
 
 ## Network boundary
 
@@ -28,8 +30,8 @@ localhost-only container deployment. It is not a hardened public multi-tenant se
 - Docker listens on `0.0.0.0` inside the container, but Compose publishes both ports to
   host loopback only.
 - Do not expose port `4318` directly to the internet.
-- Remote deployment requires TLS, network authentication, rate limiting, and a reviewed
-  secret manager before use.
+- Cloud deployment uses TLS, Cloudflare Access, origin checks, tenant-scoped tokens,
+  Durable Objects, and Worker secrets.
 
 ## Budget recovery
 
@@ -42,14 +44,14 @@ processed the request. Operators may choose `release`, but that can undercount s
 
 ## Known limitations
 
-- Provider billing and local ledger state are not transactionally linked.
+- Provider billing and Guard ledger state are not transactionally linked.
 - Crash recovery cannot prove whether an interrupted upstream request was billed.
 - Ledger retention and archival are not implemented.
-- OAuth and key files use filesystem permissions rather than an operating-system
-  keychain or cloud secret manager.
+- Local OAuth and key files use filesystem permissions; cloud tenant credentials use
+  AES-GCM encryption and Worker secrets.
 - Cursor custom-base-URL support varies by installed version.
-- Live Orbio inference remains blocked for the connected account until it has spendable
-  credit.
+- The Codex adapter targets text and function tools; future Responses modalities may
+  require additional protocol translation.
 
 ## Reporting
 

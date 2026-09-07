@@ -1,84 +1,72 @@
-# Build Week submission checklist
+# Orbio Build Week submission checklist
 
 Updated: 2026-09-07
 
 ## Positioning
 
-**One wallet. Many agents. Safe spend.**
+**Connect Orbio. Control every agent.**
 
-Orbio Guard is a local credit-control plane that keeps the account gateway key private
-while separate agents receive identities, budgets, model rules, kill switches, and a
-metadata-only audit trail.
+Orbio Guard is a multi-tenant control plane for Orbio-powered agents. Users connect their
+own Orbio account, then issue separate agent identities with enforceable budgets, model
+policies, kill switches, and metadata-only auditing. OAuth tokens and gateway keys remain
+encrypted per tenant.
 
-## Demo checklist
+## Submission links
 
-- Run `npm run dev -- demo --hold`.
-- Show Alpha and Beta as separate Guard agents.
-- Show Beta succeed once, then receive `429 DAILY_BUDGET_EXCEEDED`.
-- Show Alpha continue successfully.
-- Show the budget and activity changes on the dashboard.
-- State clearly that demo mode uses a mock upstream and no Orbio credit.
-- Separately show authenticated Orbio balance/key status and the live-created key
-  fingerprint without exposing credentials.
+- Public product and proof: `https://orbio-guard.pages.dev`
+- Beginner onboarding: `https://orbio-guard.pages.dev/getting-started/`
+- Access-protected app: `https://guard.larkvine.org/dashboard/`
+- Inference health: `https://api.guard.larkvine.org/readyz`
+- Repository: `https://github.com/Jhayboo3/orbio-build`
+- Current release: `https://github.com/Jhayboo3/orbio-build/releases/tag/v0.1.0-rc.4`
 
-## Technical walkthrough checklist
+## Judge demo
 
-- OAuth discovery, authorization code + PKCE, refresh storage, and non-interactive
-  dashboard refresh.
-- One account-level Orbio key behind Guard agent credentials.
-- File permissions, atomic key recovery, state locking, and stale reservation recovery.
-- Chat Completions, Responses, Anthropic Messages, and SSE cost reconciliation.
-- Metadata-only ledger and dashboard API privacy tests.
-- Canonical gateway-host handling that preserves authorization headers.
+1. Show the public problem and live-proof strip.
+2. Explain Access login → Connect Orbio → PKCE callback → encrypted tenant vault.
+3. Create an agent with model and budget policy without exposing its token.
+4. Show live Codex on `gpt-5.6-sol` using provider `orbio_guard`.
+5. Run a harmless tool such as `pwd` and show the final response.
+6. Run the deterministic two-agent demo and show Beta receive
+   `429 DAILY_BUDGET_EXCEEDED` before upstream access.
+7. Show Alpha continue and show metadata-only activity/cost reconciliation.
+
+## Proof to state explicitly
+
+- 430 models returned by the authenticated Orbio catalog.
+- Live GPT-5.6 Sol inference through Guard and Orbio.
+- Live Codex text and shell-tool round trips.
+- Provider-reported spend reconciliation.
+- Orbio OAuth dynamic registration and HTTPS callback acceptance.
+- One encrypted Durable Object tenant per authenticated user.
+- 69 automated tests and zero dependency vulnerabilities.
+- No prompts, responses, raw keys, or tokens in the audit ledger.
 
 ## Required artifacts
 
-- Public repository before the Build Week deadline. The repository is currently private
-  by operator request and must be changed deliberately before submission.
-- Live or reproducible localhost dashboard.
-- Pitch video no longer than three minutes.
+- Public repository and live URL.
+- Product pitch no longer than three minutes.
 - Technical walkthrough no longer than three minutes.
-- Architecture diagram and synthetic screenshots. These are now available under
-  `docs/architecture.md` and `docs/assets/`.
-- Installation, deployment, security, demo, limitations, and troubleshooting docs.
-
-Timed scripts are ready in `docs/pitch-script.md` and
-`docs/technical-walkthrough.md`. A verified silent H.264 screen-capture draft is
-available at `docs/assets/orbio-guard-demo.mp4`. A 27-second synthetic narrated H.264/AAC
-draft is available at `docs/assets/orbio-guard-demo-narrated.mp4`.
-
-Submission-length synthetic narrated drafts are also ready:
-
-- `docs/assets/orbio-guard-pitch-draft.mp4` - 77.6-second product pitch.
-- `docs/assets/orbio-guard-technical-draft.mp4` - 1-minute 43.6-second technical
-  walkthrough.
-
-Personal re-narration remains optional if the builder wants their own voice.
+- Architecture diagram and sanitized screenshots.
+- Installation, security, deployment, onboarding, models, and limitations documentation.
 
 ## Release gate
 
 ```bash
 npm run release:check
 npm run submission:check
-docker build -t orbio-guard:release .
 git status --short
 ```
 
-Require a clean repository, passing tests, zero high-severity audit findings, successful
-desktop/mobile rendering, and no credentials in tracked files.
+Require a clean tagged repository, passing CI, zero high-severity audit findings, valid
+media duration, and no credentials in tracked files.
 
-`submission:check` also reports live OAuth/key/credit readiness, local permissions,
-release tag alignment, repository visibility, draft-release status, and media durations
-without printing wallet balances or credentials. Use `node scripts/submission-check.mjs
---strict` when every public-launch blocker should produce a non-zero exit code.
+## Honest limitations
 
-## Honest limitations to disclose
-
-- Live key creation and rotation are verified; live revoke remains intentionally
-  unexecuted.
-- A limited live `openai/gpt-4o-mini` request completed through Guard with HTTP 200 and
-  provider-reported spend reconciliation; its temporary agent was disabled immediately.
-- Cursor setup is guided rather than automatically applied.
-- Crash recovery confirms or releases stale reservations but cannot prove provider
-  billing outcome.
-- The container is localhost-oriented, not a public multi-tenant deployment.
+- Public dashboard data is synthetic; live tenant data is protected by Cloudflare Access.
+- Cursor custom-provider support varies by installed version.
+- Live account-key revoke remains intentionally unexecuted because it stops that account.
+- Stale reservation recovery is conservative and cannot independently prove provider
+  billing after an interrupted request.
+- The Responses-to-Chat Codex adapter supports text and function tools; not every future
+  Responses API modality is guaranteed.

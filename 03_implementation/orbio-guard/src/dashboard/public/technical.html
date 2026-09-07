@@ -13,7 +13,7 @@
         <span class="brand-orb" aria-hidden="true"></span>
         <span>Orbio Guard</span>
       </a>
-      <div class="system-state"><span class="live-dot"></span><span>Technical walkthrough · synthetic data</span></div>
+      <div class="system-state"><span class="live-dot"></span><span>Cloud architecture · live-verified</span></div>
     </header>
 
     <main class="technical shell">
@@ -21,8 +21,8 @@
         <p class="eyebrow">Architecture and trust boundaries</p>
         <h1>Under the guard.</h1>
         <p>
-          One local control plane separates untrusted agent tools from the account-level
-          Orbio credential, enforcing policy before provider access and reconciling cost
+          Cloudflare Access, tenant Durable Objects, encrypted Orbio connections, and
+          scoped agent tokens enforce policy before provider access and reconcile cost
           afterward.
         </p>
       </section>
@@ -37,7 +37,7 @@
           <i>→</i>
           <div><span>Guard</span><strong>Identity<br />Policy<br />Budget</strong></div>
           <i>→</i>
-          <div><span>Vault</span><strong>One protected<br />Orbio key</strong></div>
+          <div><span>Tenant vault</span><strong>Encrypted<br />Orbio key</strong></div>
           <i>→</i>
           <div><span>Gateway</span><strong>Models and<br />usage cost</strong></div>
         </div>
@@ -51,15 +51,15 @@
             <li>Protected-resource discovery</li>
             <li>Authorization code and PKCE</li>
             <li>Dynamic client registration</li>
-            <li>Refresh-token persistence</li>
-            <li>Authenticated tool-contract capture</li>
+            <li>AES-GCM token and key storage</li>
+            <li>One private Durable Object per user</li>
           </ul>
         </article>
         <article class="technical-dark">
           <p class="eyebrow">Credential boundary</p>
           <div class="key-orb"><span></span></div>
           <strong>Agents never receive the upstream key.</strong>
-          <small>Owner-only storage · atomic recovery · fingerprint-only UI</small>
+          <small>Tenant isolation · encrypted storage · fingerprint-only UI</small>
         </article>
       </section>
 
@@ -69,7 +69,7 @@
           <h2>Reserve. Forward. Reconcile.</h2>
         </div>
         <div class="technical-steps">
-          <article><span>1</span><h3>Reserve</h3><p>Confirmed plus in-flight spend is checked under a cross-process lock.</p></article>
+          <article><span>1</span><h3>Reserve</h3><p>Confirmed plus in-flight spend is serialized inside the tenant Durable Object.</p></article>
           <article><span>2</span><h3>Forward</h3><p>The vault key is loaded only after identity and policy succeed.</p></article>
           <article><span>3</span><h3>Confirm</h3><p>Provider usage replaces the reservation using integer micro-dollars.</p></article>
         </div>
@@ -82,7 +82,7 @@
         </div>
         <div class="protocol-grid">
           <article><code>POST /v1/chat/completions</code><strong>OpenAI-compatible apps</strong></article>
-          <article><code>POST /v1/responses</code><strong>Codex custom provider</strong></article>
+          <article><code>POST /v1/responses</code><strong>Codex adapter + function tools</strong></article>
           <article><code>POST /v1/messages</code><strong>Claude Code gateway</strong></article>
           <article><code>text/event-stream</code><strong>SSE forwarding and final-cost reconciliation</strong></article>
         </div>
@@ -113,12 +113,12 @@
       <section class="technical-section verification-section" id="verification">
         <div class="technical-heading">
           <p class="eyebrow">06 · Verification</p>
-          <h2>Tested from domain rule to container.</h2>
+          <h2>Tested from tenant rule to live inference.</h2>
         </div>
         <div class="verification-grid">
+          <div><strong>430</strong><span>live Orbio models</span></div>
           <div><strong>69</strong><span>automated tests</span></div>
           <div><strong>3</strong><span>agent protocols</span></div>
-          <div><strong>2</strong><span>responsive UI widths</span></div>
           <div><strong>0</strong><span>audit vulnerabilities</span></div>
         </div>
         <p class="technical-close">Orbio funds the key. Guard controls the work.</p>

@@ -46,7 +46,7 @@ try {
     "#verification",
   ]) {
     await scrollTo(page, selector);
-    await page.waitForTimeout(8_000);
+    await page.waitForTimeout(7_000);
   }
   if (browserErrors.length) {
     throw new Error(browserErrors.join(" | "));

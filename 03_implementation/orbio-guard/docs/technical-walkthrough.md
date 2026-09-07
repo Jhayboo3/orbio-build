@@ -1,58 +1,57 @@
-# Technical walkthrough script - under three minutes
+# Orbio Guard technical walkthrough - target 2 minutes 30 seconds
 
-Updated: 2026-09-06
+Updated: 2026-09-07
 
-Target length: approximately 2 minutes 40 seconds.
+## 0:00-0:25 - Tenant boundary
 
-## 0:00-0:25 - Architecture
+> Cloudflare Access verifies the user. Guard derives a keyed tenant locator and routes
+> that identity to one private SQLite-backed Durable Object. The original owner remains
+> on the primary object; every new user receives isolated agents, budgets, activity, and
+> an Orbio connection.
 
-> Agent tools call one local endpoint using separate Guard tokens. The proxy resolves the
-> identity, evaluates policy, reserves spend, and only then loads the account-level Orbio
-> key. The upstream key never reaches Codex, Claude Code, Cursor, or an application SDK.
+Show the technical request path and `docs/multi-tenancy.md`.
 
-Show `docs/architecture.md`.
+## 0:25-0:55 - Connect Orbio
 
-## 0:25-0:55 - Orbio integration
+> Connect Orbio dynamically registers an OAuth client, uses authorization code plus PKCE,
+> validates tenant-bound state on a dedicated callback hostname, and encrypts OAuth tokens
+> with AES-GCM. Refresh tokens are rotated before expiry.
 
-> Guard discovers Orbio's protected-resource and authorization-server metadata, performs
-> authorization code plus PKCE, dynamically registers the client, stores refresh tokens
-> with owner-only permissions, and reconnects without prompting. The authenticated MCP
-> runtime currently exposes balance, key status, create, revoke, and legacy-key delete.
-
-Show `orbio-guard status` and `orbio-guard key status` without revealing raw state files.
+> Provisioning calls Orbio MCP for key status and creation. If an account already has a
+> key, Guard stops and requires a second explicit confirmation because replacement
+> invalidates other consumers.
 
 ## 0:55-1:25 - Request enforcement
 
-> Every request receives a Guard request ID. Agent status, model patterns, per-request
-> ceiling, and UTC daily budget are checked before forwarding. Reservations are integer
-> micro-dollars and serialized across processes, preventing concurrent requests from
-> racing past the limit.
+> Agent tokens contain a non-secret tenant locator and random secret; only the complete
+> hash is stored. The Durable Object validates status, provider-qualified model policy,
+> request ceiling, and remaining UTC daily budget before reserving integer micro-dollars.
+> Tenant credentials are decrypted only after authorization succeeds.
 
-Show the authorizer and budget tests.
+Show the policy controls and metadata activity.
 
-## 1:25-1:55 - Protocols and reconciliation
+## 1:25-1:50 - Agent compatibility
 
-> The same control path supports Chat Completions, Responses, and Anthropic Messages.
-> Buffered responses read usage cost directly. SSE streams are forwarded while Guard
-> watches final events and confirms cost before closing the downstream stream. Unpriced
-> failures release their reservation.
+> Guard supports Chat Completions, Anthropic Messages, and the Responses API. Orbio's live
+> catalog currently exposes 430 models. Codex uses native metadata slug `gpt-5.6-sol`;
+> Guard maps it to `openai/gpt-5.6-sol` and translates text and function-tool events to
+> Orbio's available Chat Completions route.
 
-Show the protocol integration tests.
+Show a sanitized Codex text and `pwd` tool round trip.
 
-## 1:55-2:20 - Secrets and recovery
+## 1:50-2:12 - Reconciliation and recovery
 
-> Key creation writes the MCP result to an owner-only recovery file before parsing. The
-> result is removed only after the secret reaches the vault. State writes use a lock and
-> atomic rename. On restart, stale reservations are confirmed by default because an
-> interrupted upstream request may still have been billed.
+> Buffered or streamed provider usage replaces the reservation with actual cost. Unpriced
+> failures release it. Interrupted reservations are conservatively confirmed after five
+> minutes because Orbio may have processed the request. The ledger contains IDs, model,
+> decision, cost, and timestamps, never prompt or response content.
 
-Show `SECURITY.md` and the recovery tests.
+## 2:12-2:30 - Verification
 
-## 2:20-2:40 - Verification
+> The release gate covers 69 automated tests, strict Node and Worker typechecking,
+> desktop and mobile rendering, production builds, dependency audit, and GitHub Actions.
+> Live verification covers OAuth registration, model catalog, key lifecycle, Codex text
+> and tools, cost reconciliation, tenant isolation, Access enforcement, and Cloudflare
+> deployment.
 
-> The release gate runs type checking, 69 automated tests, desktop and mobile Chromium
-> rendering, dependency audit, and Docker build. The container runs as a non-root user
-> and exposes health and key-aware readiness endpoints. The same gate passes in GitHub
-> Actions.
-
-End on the dashboard and repository status.
+End on the public live-proof strip and repository.

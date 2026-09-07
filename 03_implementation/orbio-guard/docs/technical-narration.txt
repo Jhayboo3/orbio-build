@@ -1,13 +1,11 @@
-Orbio Guard creates a local trust boundary between agent tools and the account-level Orbio credential.
+Orbio Guard begins with a tenant boundary. Cloudflare Access verifies the user, and a keyed locator routes that identity to one private SQLite-backed Durable Object. Every tenant gets isolated agents, budgets, activity, OAuth tokens, and gateway key.
 
-Every request starts with a Guard identity. Status, model policy, per-request ceiling, and daily budget are evaluated before the upstream key is loaded. The budget service reserves integer micro-dollars under a cross-process file lock, preventing concurrent requests from racing past the limit.
+Connect Orbio dynamically registers an OAuth client, uses authorization code plus P K C E, validates tenant-bound state on a dedicated callback hostname, and encrypts OAuth tokens with AES G C M. Gateway provisioning uses Orbio M C P. Existing keys are never replaced without explicit destructive confirmation.
 
-Account access uses Orbio MCP with protected-resource discovery, authorization code plus PKCE, dynamic registration, and refresh-token storage. The single gateway key remains inside an owner-only vault. Key creation uses a recovery response so the one-time secret is not lost if parsing or persistence fails.
+Every agent request starts with a scoped Guard token. Only its complete hash is stored. Status, model policy, request ceiling, and remaining daily budget are checked before integer micro-dollars are reserved and before tenant credentials are decrypted.
 
-The proxy supports OpenAI Chat Completions, the Responses API used by Codex, and Anthropic Messages for Claude Code. Buffered and streamed responses share one enforcement path. Guard reads provider usage cost from JSON or final SSE events, then confirms the reservation before downstream completion.
+Guard supports OpenAI Chat Completions, Anthropic Messages, and the Responses API used by Codex. The live Orbio catalog exposes four hundred and thirty models. Guard maps Codex metadata slugs to Orbio model IDs and translates text and function-tool events to the available gateway protocol.
 
-The ledger records agent IDs, models, decisions, cost, key fingerprints, and upstream errors. It never stores prompts, model responses, authorization headers, or raw credentials.
+Provider usage replaces each reservation with actual cost. Unpriced failures release it. Interrupted reservations are conservatively confirmed because Orbio may have processed the request. The ledger stores IDs, model, decision, cost, and time, never prompt or response content.
 
-State writes use schema validation, temporary files, atomic rename, and stale-lock recovery. After a crash, old reservations are conservatively confirmed by default because the provider may still have billed the request.
-
-The release gate covers fifty-five automated tests, desktop and mobile browser rendering, dependency audit, protocol streaming, Docker build, non-root runtime, and GitHub Actions. Orbio funds the key. Guard controls the work.
+The release gate covers sixty nine automated tests, strict Node and Worker typechecking, responsive browser rendering, production builds, dependency audit, and GitHub Actions. Live verification covers OAuth registration, key lifecycle, tenant isolation, model discovery, Codex text and tools, and Cloudflare Access. Orbio provides the intelligence. Guard makes fleets safe.

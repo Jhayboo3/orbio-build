@@ -1,104 +1,121 @@
 # Architecture and trust boundaries
 
-Updated: 2026-09-06
+Updated: 2026-09-07
 
-## System overview
+## Cloud system overview
 
 ```mermaid
 flowchart LR
-  subgraph Agents[Agent tools]
-    Codex[Codex / Responses]
-    Claude[Claude Code / Messages]
-    SDK[OpenAI SDK / Chat]
-  end
+  User[Authenticated user] --> Access[Cloudflare Access]
+  Access --> Worker[Guard Worker]
+  Worker --> Tenant[Tenant Durable Object]
+  Tenant --> OAuth[Encrypted Orbio OAuth + key]
+  OAuth --> MCP[Orbio MCP]
 
-  subgraph Guard[Orbio Guard - local trust boundary]
-    Proxy[Protocol proxy]
-    Identity[Agent identity]
-    Policy[Policy engine]
-    Budget[Atomic budget service]
-    Vault[Upstream key vault]
-    Ledger[Metadata ledger]
-    Dashboard[Dashboard]
-    OAuth[OAuth + MCP client]
-  end
+  Codex[Codex / Responses] --> API[Guard inference API]
+  Claude[Claude Code / Messages] --> API
+  SDK[OpenAI SDK / Chat] --> API
+  API --> Tenant
+  Tenant --> Policy[Identity + model + budget]
+  Policy --> Gateway[Orbio gateway]
+  Gateway --> API
+```
 
-  OrbioMCP[Orbio MCP]
-  Gateway[Orbio model gateway]
-  State[(Owner-only local state)]
+Every verified Access email maps through keyed HMAC to one private SQLite-backed Durable
+Object. The locator is not a raw email hash. OAuth tokens and gateway keys are encrypted
+with AES-256-GCM before storage.
 
-  Codex --> Proxy
-  Claude --> Proxy
-  SDK --> Proxy
-  Proxy --> Identity --> Policy --> Budget
-  Budget --> Vault --> Gateway
-  Proxy --> Ledger
-  Identity --> State
-  Budget --> State
-  Vault --> State
-  Ledger --> State
-  Dashboard --> State
-  Dashboard --> OAuth --> OrbioMCP
-  OAuth --> Vault
+New agent tokens carry the non-secret tenant locator plus a random secret. Routing uses
+the locator; authorization hashes and compares the complete token. Legacy unscoped tokens
+continue routing to the original `primary` tenant.
+
+## Cloud request sequence
+
+```mermaid
+sequenceDiagram
+  participant A as Agent tool
+  participant W as Guard Worker
+  participant T as Tenant Durable Object
+  participant O as Orbio gateway
+
+  A->>W: Request + tenant-scoped Guard token
+  W->>T: Resolve full token hash
+  T->>T: Status + model + request limit
+  T->>T: Reserve against UTC daily budget
+  T-->>W: Agent + reservation ID
+  W->>T: Load encrypted tenant key
+  W->>O: Request + Orbio key
+  O-->>W: Response + usage.cost
+  W->>T: Confirm actual cost / release failure
+  W-->>A: Response + Guard request ID
+```
+
+## Orbio connection sequence
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant W as Guard Worker
+  participant T as Tenant Durable Object
+  participant O as Orbio OAuth + MCP
+
+  B->>W: Access-authenticated Connect Orbio
+  W->>T: Start connection for tenant
+  T->>O: Dynamic OAuth client registration
+  T-->>B: Authorization URL + PKCE challenge
+  B->>O: Approve orbio:credits
+  O->>W: HTTPS callback + code + tenant state
+  W->>T: Route by state locator
+  T->>T: Validate state + PKCE verifier
+  T->>O: Exchange code for tokens
+  T->>T: AES-GCM encrypt tokens
+  B->>T: Provision gateway key
+  T->>O: MCP key status + create
+  T->>T: AES-GCM encrypt gateway key
 ```
 
 ## Trust boundaries
 
-### Untrusted agent clients
+### Untrusted agents
 
-Agents may be buggy, compromised, or incorrectly configured. They receive a high-entropy
-Guard token that identifies one policy record. They never receive OAuth tokens or the
-account-level Orbio gateway key.
+Agents receive only one Guard token. They never receive Orbio OAuth credentials or the
+tenant gateway key. Invalid, paused, disabled, disallowed, or over-budget requests stop
+before key decryption.
 
-### Guard process
+### Access-authenticated operators
 
-The local Guard process is trusted to:
+Cloudflare Access validates login before the operator application. The Worker independently
+validates JWT signature, issuer, audience, and email. Browser mutations also require the
+exact operator origin.
 
-- Authenticate agent tokens.
-- Enforce model, status, request, and daily-budget policy.
-- Load the upstream key only after authorization succeeds.
-- Reconcile provider usage and write metadata events.
-- Serve the local dashboard without returning secrets.
+### Tenant Durable Object
 
-### Orbio services
+Each object serializes its own agents, budgets, reservations, encrypted connection, and
+metadata ledger. One tenant cannot read or spend another tenant's key or state.
 
-Orbio MCP is trusted for account authentication, balance, key status, and key lifecycle.
-The Orbio gateway is trusted for model routing and usage reporting. Guard treats network
-errors and missing usage conservatively.
+### Public OAuth callback
 
-### Local filesystem
+`auth.guard.larkvine.org` exposes only the exact callback path. The tenant object requires
+an exact stored state and PKCE verifier before token exchange.
 
-OAuth, upstream-key, agent, budget, and ledger files use owner-only permissions. State
-updates use an inter-process lock, temporary file, atomic rename, and schema validation.
+### Orbio
 
-## Request sequence
-
-```mermaid
-sequenceDiagram
-  participant A as Agent
-  participant P as Guard proxy
-  participant S as State/policy
-  participant O as Orbio gateway
-
-  A->>P: Request + Guard token
-  P->>S: Resolve agent and policy
-  S-->>P: Agent + limits
-  P->>S: Reserve estimated spend atomically
-  S-->>P: Reservation ID
-  P->>O: Request + protected Orbio key
-  O-->>P: Buffered JSON or SSE + usage.cost
-  P->>S: Confirm actual cost / release failure
-  P-->>A: Compatible response + Guard request ID
-```
+Orbio OAuth and MCP are authoritative for account authorization, balance, key status, and
+key lifecycle. The gateway is authoritative for model routing and provider-reported cost.
 
 ## Failure behavior
 
-- Unknown or invalid identity: fail before reading the upstream key.
-- Paused/disabled agent: `403` before upstream access.
-- Request or daily limit: `429` before upstream access.
-- Upstream unpriced error: release reservation and record metadata.
-- Successful response without cost: confirm the conservative reservation.
-- Process crash with in-flight reservation: recover after TTL; default policy confirms
-  the reservation because the provider may have processed it.
-- Missing OAuth during dashboard refresh: report remote status unavailable without
-  launching an interactive browser.
+- Missing Access identity: redirect before operator UI access.
+- Direct Worker bypass: `403 ACCESS_REQUIRED`.
+- Unknown agent token: `401` before credential access.
+- Paused, disabled, or disallowed agent: `403` before credential access.
+- Request or daily limit: `429` before credential access.
+- Unconnected tenant: `503 ORBIO_NOT_CONNECTED`.
+- Existing Orbio key: stop and require explicit destructive replacement confirmation.
+- Interrupted request: conservatively confirm stale reservation after TTL.
+
+## Local runtime
+
+The Node CLI remains available for localhost and container operation with owner-only
+files and cross-process locking. Cloud production uses Access, Worker secrets, AES-GCM
+tenant encryption, and Durable Objects instead.

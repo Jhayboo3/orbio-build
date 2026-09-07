@@ -37,13 +37,13 @@ try {
   const rootUrl = demo.dashboardUrl.replace(/\/dashboard$/, "/");
   await page.goto(rootUrl, { waitUntil: "networkidle" });
   await page.waitForTimeout(4_000);
-  await scrollTo(page, ".statement-section");
+  await scrollTo(page, ".proof-strip");
   await page.waitForTimeout(4_000);
-  await scrollTo(page, ".steps");
-  await page.waitForTimeout(4_000);
+  await scrollTo(page, ".contest-proof");
+  await page.waitForTimeout(8_000);
 
   await page.goto(demo.dashboardUrl, { waitUntil: "networkidle" });
-  await setCaption(page, "Demo mode · two agents, one protected wallet");
+  await setCaption(page, "Synthetic enforcement demo · two agents, one protected Orbio account");
   await page.waitForTimeout(4_000);
 
   const captions = [
@@ -56,12 +56,12 @@ try {
     const step = await demo.runNext();
     if (!step) throw new Error("Pitch demo ended before all steps completed.");
     await page.reload({ waitUntil: "networkidle" });
-    await setCaption(page, `Demo mode · ${caption} · HTTP ${step.status}`);
+    await setCaption(page, `Synthetic enforcement · ${caption} · HTTP ${step.status}`);
     await page.waitForTimeout(4_000);
   }
 
   await scrollTo(page, ".activity-panel");
-  await setCaption(page, "Demo mode · every decision recorded, no prompt stored");
+  await setCaption(page, "Synthetic enforcement · every decision recorded, no prompt stored");
   await page.waitForTimeout(6_000);
 
   await page.goto(rootUrl, { waitUntil: "networkidle" });

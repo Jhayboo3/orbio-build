@@ -1,59 +1,68 @@
-# Pitch script - under three minutes
+# Orbio Guard pitch - target 2 minutes 10 seconds
 
-Updated: 2026-09-06
+Updated: 2026-09-07
 
-Target length: approximately 2 minutes 15 seconds.
+## 0:00-0:18 - Problem
 
-## 0:00-0:20 - Problem
+> Orbio gives one key access to every model. But when several agents share that key, one
+> leaked credential or runaway loop can expose the entire balance. There is no identity,
+> budget, model policy, kill switch, or attribution per agent.
 
-> Orbio gives an agent a key that can fund its own inference. But the moment one wallet
-> powers several agents, repositories, or teammates, the operator loses control. There
-> are no per-agent budgets, no model rules, no fleet kill switch, and everyone is tempted
-> to share the same secret.
+Show the public landing hero and the one Orbio tenant connected to several agents.
 
-## 0:20-0:45 - Product
+## 0:18-0:40 - Product
 
-> This is Orbio Guard: one wallet, many agents, safe spend. Guard runs locally between
-> agent tools and the Orbio gateway. Every agent receives its own Guard identity while
-> the real Orbio key stays inside an owner-only vault.
+> Orbio Guard is the multi-tenant control plane for Orbio-powered agents. Every user
+> connects their own Orbio account through OAuth. Guard encrypts that tenant's tokens and
+> gateway key, then issues separate agent identities with enforceable limits.
 
-Show the landing page and enter the dashboard.
+Show the Connect, Issue, Run section and the live-proof strip.
 
-## 0:45-1:25 - Demo
+## 0:40-1:05 - Real agent
 
-> Here are two agents sharing one account. Alpha has a larger research budget. Beta has
-> a twenty-cent coding budget. Both requests pass through the same proxy, but policy is
-> enforced separately.
+Show Codex configured with:
 
-Run `orbio-guard demo --hold`.
+```text
+model: gpt-5.6-sol
+provider: orbio_guard
+```
 
-> Alpha succeeds. Beta succeeds once. On Beta's second request, Guard atomically checks
-> confirmed plus in-flight spend, returns a 429 before the upstream key is touched, and
-> writes the decision to the ledger. Alpha continues working. One agent tripping a limit
-> does not stop the fleet.
+Ask Codex to run `pwd` and report the directory.
 
-Show the agent table, spend bars, and activity events.
+> This is real Codex calling GPT-5.6 Sol through Guard and Orbio. Guard translates the
+> Responses protocol, supports function tools, and records only model and cost metadata.
 
-## 1:25-1:55 - Technical differentiation
+## 1:05-1:35 - Enforcement
 
-> Guard is not another agent wrapper. It is credit-control infrastructure. It supports
-> OpenAI Chat Completions, the Responses API used by Codex, Anthropic Messages for Claude
-> Code, and streaming usage reconciliation. OAuth uses PKCE. Key creation has an atomic
-> recovery path. State writes are locked across processes, and crash recovery confirms
-> uncertain reservations by default.
+Show two synthetic demo agents sharing one protected account. Run the deterministic demo:
 
-## 1:55-2:15 - Orbio alignment and close
+```bash
+npm run dev -- demo --hold
+```
 
-> This makes Orbio credits safer to use across real agent fleets. It drives more gateway
-> usage without asking teams to share secrets or trust every agent with the full wallet
-> balance. Orbio funds the key. Guard controls the work.
+> Both agents can work. Beta's second reservation crosses its daily budget, so Guard
+> returns `429 DAILY_BUDGET_EXCEEDED` before the Orbio key is read. Alpha continues.
+> One constrained agent cannot stop the fleet.
 
-> One wallet. Many agents. Safe spend.
+## 1:35-1:58 - Technical proof
 
-## Recording notes
+Show the technical page and activity dashboard.
 
-- Keep demo mode visibly labeled.
-- Never show terminal output containing an agent or Orbio key.
-- Show the live-created key fingerprint only.
-- State that the connected account currently needs spendable credit for a live model
-  response.
+> Each Access identity maps to a private Durable Object. OAuth and gateway credentials
+> are encrypted with AES-GCM. Budgets are serialized atomically, provider cost replaces
+> each reservation, and prompts, responses, and raw credentials never enter the ledger.
+
+Show the proof values: 430 live models, 69 automated tests, zero audit vulnerabilities.
+
+## 1:58-2:10 - Orbio value
+
+> Orbio provides the intelligence. Guard makes it safe to operate at fleet scale: more
+> developers, more agents, and more controlled inference through Orbio without shared-key
+> risk. Connect Orbio. Control every agent.
+
+## Recording rules
+
+- Never display an `og_agent_...`, OAuth token, Orbio key, or complete wallet address.
+- Clearly label deterministic budget demonstrations as synthetic.
+- Clearly label Codex and catalog evidence as live-verified.
+- Keep the final video below three minutes.

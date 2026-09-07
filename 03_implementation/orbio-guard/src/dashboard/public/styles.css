@@ -59,6 +59,12 @@ a { color: inherit; }
 .guard-stamp { position: absolute; right: 10%; bottom: 9%; width: 88px; height: 88px; display: grid; place-content: center; text-align: center; border-radius: 50%; background: var(--neon); font: 700 11px/1.2 ui-monospace, monospace; text-transform: uppercase; transform: rotate(-8deg); box-shadow: 0 15px 35px -20px rgba(87,120,0,.8); }
 
 .statement-section { border-block: 1px solid var(--line); background: var(--paper-2); }
+.proof-strip { border-block: 1px solid var(--line); background: var(--ink); color: var(--paper); }
+.proof-grid { display: grid; grid-template-columns: repeat(4, 1fr); }
+.proof-grid div { min-height: 150px; display: flex; flex-direction: column; justify-content: space-between; padding: 28px; border-left: 1px solid rgba(240,240,236,.15); }
+.proof-grid div:last-child { border-right: 1px solid rgba(240,240,236,.15); }
+.proof-grid strong { color: var(--neon); font-size: 48px; letter-spacing: -.06em; }
+.proof-grid span { max-width: 150px; color: rgba(240,240,236,.58); font: 10px/1.4 ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
 .statement-grid { display: grid; grid-template-columns: .55fr 1.3fr .7fr; gap: 60px; padding-block: 92px; }
 .statement-grid h2, .closing h2 { margin: 0; font-size: clamp(40px, 5vw, 70px); line-height: 1; letter-spacing: -.055em; }
 .statement-grid > p:last-child { margin: 4px 0 0; color: var(--ink-2); line-height: 1.7; }
@@ -69,6 +75,19 @@ a { color: inherit; }
 .steps h3 { margin: 94px 0 14px; font-size: 26px; letter-spacing: -.04em; }
 .steps p { margin: 0; color: var(--ink-2); line-height: 1.6; }
 .closing { padding-block: 100px 120px; border-top: 1px solid var(--line); text-align: center; }
+.contest-proof { display: grid; grid-template-columns: 1.15fr .85fr; gap: 70px; padding-block: 100px; border-top: 1px solid var(--line); }
+.contest-proof h2 { margin: 0; font-size: clamp(42px, 5vw, 70px); line-height: 1; letter-spacing: -.06em; }
+.proof-list p { margin: 0; padding: 18px 0; border-top: 1px solid var(--line); color: var(--ink-2); line-height: 1.6; }
+.proof-list strong { color: var(--ink); }
+.terminal-proof { margin-top: 38px; overflow: hidden; border-radius: 15px; background: #11110f; box-shadow: 0 24px 60px -40px rgba(0,0,0,.8); }
+.terminal-proof > div { min-height: 40px; display: flex; align-items: center; gap: 6px; padding: 0 14px; border-bottom: 1px solid rgba(240,240,236,.12); }
+.terminal-proof > div > span { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.terminal-proof > div > span:first-child { background: var(--danger); }
+.terminal-proof > div > span:nth-child(2) { background: #d6a841; }
+.terminal-proof > div > span:nth-child(3) { background: #8ab53b; }
+.terminal-proof small { margin-left: auto; color: rgba(240,240,236,.42); font: 8px ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
+.terminal-proof pre { margin: 0; padding: 22px; overflow: auto; color: var(--paper); font: 11px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.terminal-proof code { color: inherit; }
 .closing .button { margin-top: 36px; }
 .site-footer { min-height: 88px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
 
@@ -226,6 +245,8 @@ tbody tr:last-child td { border-bottom: 0; }
   .hero { grid-template-columns: 1fr; }
   .hero-visual { min-height: 480px; }
   .statement-grid { grid-template-columns: 1fr; gap: 18px; }
+  .proof-grid { grid-template-columns: repeat(2, 1fr); }
+  .contest-proof { grid-template-columns: 1fr; gap: 35px; }
   .metric-grid { grid-template-columns: repeat(2, 1fr); }
   .operator-panel { grid-template-columns: 1fr; }
   .connection-panel { grid-template-columns: 1fr; }
@@ -247,6 +268,8 @@ tbody tr:last-child td { border-bottom: 0; }
   .agent-node { width: 72px; height: 72px; }
   .wallet-node { width: 125px; height: 125px; }
   .steps { grid-template-columns: 1fr; }
+  .proof-grid { grid-template-columns: 1fr; }
+  .proof-grid div, .proof-grid div:last-child { min-height: 120px; border-right: 0; border-bottom: 1px solid rgba(240,240,236,.15); }
   .steps article, .steps article:last-child { min-height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
   .steps h3 { margin-top: 48px; }
   .metric-grid { grid-template-columns: 1fr; }

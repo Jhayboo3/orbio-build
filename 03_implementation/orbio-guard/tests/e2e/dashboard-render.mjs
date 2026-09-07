@@ -72,7 +72,7 @@ try {
     });
 
     await page.goto(baseUrl, { waitUntil: "networkidle" });
-    if ((await page.locator("h1").textContent())?.includes("One wallet") !== true) {
+    if ((await page.locator("h1").textContent())?.includes("Connect Orbio") !== true) {
       throw new Error("Landing page heading did not render.");
     }
     if ((await page.evaluate(() => document.documentElement.scrollWidth)) > viewport.width) {

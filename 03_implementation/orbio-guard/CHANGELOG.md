@@ -23,6 +23,10 @@
 - Multi-tenant Cloudflare isolation with one Durable Object per Access identity, scoped
   agent tokens, Orbio OAuth + PKCE connection, encrypted per-tenant tokens/keys, session
   refresh, and explicit existing-key replacement consent.
+- Contest-facing product story centered on self-service Orbio connection, real Codex
+  agent work, tenant isolation, live model evidence, and pre-key-access enforcement.
+- Regenerated pitch, technical walkthrough, and screenshot artifacts using the current
+  cloud architecture and explicit synthetic/live labels.
 
 ### Verified
 

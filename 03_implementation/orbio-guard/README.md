@@ -1,10 +1,11 @@
 # Orbio Guard
 
-**One wallet. Many agents. Safe spend.**
+**Connect Orbio. Control every agent.**
 
-Orbio Guard is a local-first credit-control plane for teams running multiple AI agents
-on one Orbio account. Agents receive separate Guard identities and policies while the
-real Orbio gateway key stays inside an owner-only local vault.
+Orbio Guard is a multi-tenant control plane for teams running Orbio-powered AI agents.
+Each user connects an isolated Orbio account, while every agent receives a separate
+identity, daily budget, model policy, request ceiling, and kill switch. OAuth tokens and
+gateway keys remain encrypted; audit records never store prompts or responses.
 
 Public Cloudflare demo: <https://orbio-guard.pages.dev>. The full Worker deployment uses
 Access-protected `guard.larkvine.org` and token-authenticated `api.guard.larkvine.org`.
@@ -26,7 +27,7 @@ teammates:
 - Atomic spend reservations that prevent concurrent budget races.
 - Safe MCP-backed key creation, rotation, and revocation workflows.
 - Metadata-only activity records with no prompts or model responses.
-- Responsive local dashboard for wallet, key, agent, budget, and incident visibility.
+- Access-protected cloud dashboard for connection, key, agent, budget, and incident visibility.
 
 ![Orbio Guard dashboard](docs/assets/dashboard-desktop.png)
 
@@ -57,13 +58,13 @@ See `docs/video-storyboard.md` for narration and editing cues.
 
 Submission-length drafts:
 
-- [Narrated product pitch](docs/assets/orbio-guard-pitch-draft.mp4) - 77.6 seconds.
+- [Narrated product pitch](docs/assets/orbio-guard-pitch-draft.mp4) - 92.5 seconds.
 - [Narrated technical walkthrough](docs/assets/orbio-guard-technical-draft.mp4) -
-  1 minute 43.6 seconds.
+  1 minute 52 seconds.
 
 ## Supported Clients
 
-Guard exposes one local base URL with a shared policy path for:
+Guard exposes one cloud inference URL with a shared policy path for:
 
 - OpenAI Chat Completions: `POST /v1/chat/completions`.
 - OpenAI Responses API: `POST /v1/responses`.
@@ -182,7 +183,9 @@ The release gate currently includes:
 - Mock Chat Completions, Responses, Anthropic Messages, and SSE streaming checks.
 - Cross-process state locking and crash-recovery tests.
 
-The same release gate and Docker build pass in GitHub Actions.
+The same release gate and Docker build pass in GitHub Actions. Live evidence also covers
+Cloudflare Access, tenant isolation, Orbio OAuth registration, a 430-model catalog, and
+Codex text/tool round trips.
 
 ## Documentation
 
@@ -215,8 +218,8 @@ The same release gate and Docker build pass in GitHub Actions.
 - A limited live `openai/gpt-4o-mini` request completed through Guard with HTTP 200 and
   confirmed provider-reported spend. The temporary agent was disabled immediately.
 - Live key revoke remains intentionally unexecuted.
-- The repository remains private by operator request and must be made public deliberately
-  before a public Build Week submission.
-- The supplied deployment is localhost-oriented, not a public multi-tenant service.
+- Public dashboard data is synthetic; tenant data remains behind Cloudflare Access.
+- The local container remains localhost-oriented; the Cloudflare Worker is the hardened
+  multi-tenant deployment.
 
 Current release candidate: `v0.1.0-rc.4`, prepared September 7, 2026.

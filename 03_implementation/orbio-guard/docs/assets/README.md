@@ -1,7 +1,8 @@
 # Submission assets
 
-The PNG files in this directory are generated from the deterministic mock demo and
-contain synthetic account, wallet, agent, and key data.
+The PNG files are generated from the current public product pages and deterministic
+enforcement demo. Dashboard account, wallet, agent, and key data is synthetic; the public
+landing and technical pages describe separately verified live capabilities.
 
 Regenerate them with:
 

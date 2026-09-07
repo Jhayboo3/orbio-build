@@ -1,11 +1,11 @@
-Orbio gives an agent a key that can fund its own inference. But when one account powers several agents, repositories, or teammates, the operator needs more control.
+Orbio gives one key access to every model. But when several agents share that key, one leaked credential or runaway loop can expose the entire balance. Teams need identity, budgets, model rules, kill switches, and attribution per agent.
 
-Orbio Guard is a local credit-control plane. Every agent receives a separate Guard identity, daily budget, model policy, and kill switch, while the real Orbio key stays protected inside an owner-only vault.
+Orbio Guard is the multi-tenant control plane for Orbio-powered agents. Every user connects an isolated Orbio account through OAuth. Guard encrypts that tenant's tokens and gateway key, then issues separate agent identities with enforceable limits.
 
-Here, Alpha and Beta share one account. Alpha completes a request. Beta completes one request, then its next reservation exceeds its daily limit. Guard returns a budget error before the upstream key is touched. Alpha continues working, so one constrained agent cannot stop the fleet.
+The live product has discovered four hundred and thirty Orbio models. Codex runs GPT 5.6 Sol through Guard, including shell tool calls. Guard translates the Responses protocol, applies policy first, and records only cost and decision metadata.
 
-The dashboard shows account credit, key health, agent policies, confirmed spend, and every control decision. The ledger stores metadata only: never prompts, model responses, or credentials.
+Here, two synthetic agents demonstrate enforcement. Alpha completes a request. Beta completes one request, then its next reservation exceeds its daily limit. Guard returns a budget error before the upstream key is touched. Alpha continues, so one constrained agent cannot stop the fleet.
 
-Guard supports OpenAI Chat Completions, the Responses API used by Codex, Anthropic Messages for Claude Code, and streamed usage reconciliation. OAuth uses PKCE, state writes are locked across processes, and interrupted reservations recover conservatively after a crash.
+Each Access identity maps to a private Durable Object. OAuth and gateway credentials are encrypted with AES G C M. Budgets are serialized atomically, provider cost replaces each reservation, and prompts, responses, and raw credentials never enter the ledger.
 
-Orbio funds the key. Guard controls the work. One wallet. Many agents. Safe spend.
+Orbio provides the intelligence. Guard makes it safe to operate at fleet scale: more developers, more agents, and more controlled inference through Orbio without shared-key risk. Connect Orbio. Control every agent.
