@@ -17,6 +17,11 @@ npm run cloudflare:deploy
 See `docs/cloudflare.md` for the deployment boundary and Git integration settings. The
 Cloudflare adapter is a public showcase, not the live credential-bearing inference proxy.
 
+The full live Worker is deployed separately to `guard.larkvine.org` and
+`api.guard.larkvine.org`. It uses Cloudflare Access, an encrypted Worker secret, and a
+SQLite-backed Durable Object rather than the local filesystem. See `docs/cloudflare.md`
+for its trust boundaries and administration workflow.
+
 ## Native production run
 
 ```bash

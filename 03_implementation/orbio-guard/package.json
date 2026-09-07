@@ -11,7 +11,7 @@
     "dev": "tsx src/cli.ts",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
     "build:cloudflare": "node scripts/build-cloudflare.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.worker.json",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
@@ -24,7 +24,9 @@
     "submission:check": "npm run build && node scripts/submission-check.mjs",
     "release:check": "npm run typecheck && npm test && npm run build && npm run test:ui && npm run build:cloudflare && npm audit --audit-level=high",
     "cloudflare:dev": "npm run build:cloudflare && wrangler pages dev cloudflare/dist",
-    "cloudflare:deploy": "npm run build:cloudflare && wrangler pages deploy cloudflare/dist --project-name orbio-guard"
+    "cloudflare:deploy": "npm run build:cloudflare && wrangler pages deploy cloudflare/dist --project-name orbio-guard",
+    "cloudflare:live:dev": "npm run build:cloudflare && wrangler dev --config wrangler.worker.toml",
+    "cloudflare:live:deploy": "npm run build:cloudflare && wrangler deploy --config wrangler.worker.toml"
   },
   "engines": {
     "node": ">=22"
@@ -32,9 +34,11 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
     "commander": "15.0.0",
+    "jose": "^6.1.0",
     "zod": "4.5.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260907.1",
     "@types/node": "latest",
     "playwright": "^1.63.0",
     "tsx": "4.23.13",

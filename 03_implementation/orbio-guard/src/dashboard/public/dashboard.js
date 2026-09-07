@@ -48,13 +48,17 @@ function render(snapshot) {
   elements.systemLabel.textContent =
     snapshot.mode === "demo"
       ? "Demo mode · mock upstream"
-      : "Guard online · local only";
+      : snapshot.deployment === "cloudflare"
+        ? "Guard online · Cloudflare"
+        : "Guard online · local only";
   elements.updatedAt.textContent = new Date(snapshot.generatedAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
   });
-  elements.balance.textContent = snapshot.remote.error
+  elements.balance.textContent = snapshot.deployment === "cloudflare" && snapshot.remote.balanceUsd === null
+    ? "Managed"
+    : snapshot.remote.error
     ? "Offline"
     : money(snapshot.remote.balanceUsd ?? 0);
   elements.wallet.textContent = snapshot.remote.error
@@ -70,6 +74,8 @@ function render(snapshot) {
     : "No active remote key";
   elements.keyLocal.textContent = snapshot.mode === "demo"
     ? "Synthetic demo"
+    : snapshot.deployment === "cloudflare"
+      ? "Cloudflare secret"
     : snapshot.key.configured
       ? "Encrypted boundary"
       : "Not configured";

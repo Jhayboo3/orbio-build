@@ -1,0 +1,28 @@
+name = "orbio-guard-live"
+main = "cloudflare/worker/index.ts"
+compatibility_date = "2026-09-07"
+workers_dev = true
+
+[vars]
+ORBIO_GUARD_UPSTREAM_BASE_URL = "https://www.orbio.so/api/v1/"
+
+[assets]
+directory = "cloudflare/dist"
+binding = "ASSETS"
+run_worker_first = true
+
+[[durable_objects.bindings]]
+name = "GUARD"
+class_name = "GuardCoordinator"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GuardCoordinator"]
+
+[[routes]]
+pattern = "guard.larkvine.org"
+custom_domain = true
+
+[[routes]]
+pattern = "api.guard.larkvine.org"
+custom_domain = true

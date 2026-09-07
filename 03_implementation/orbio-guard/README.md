@@ -6,7 +6,8 @@ Orbio Guard is a local-first credit-control plane for teams running multiple AI 
 on one Orbio account. Agents receive separate Guard identities and policies while the
 real Orbio gateway key stays inside an owner-only local vault.
 
-Public Cloudflare demo: <https://orbio-guard.pages.dev>
+Public Cloudflare demo: <https://orbio-guard.pages.dev>. The full Worker deployment uses
+Access-protected `guard.larkvine.org` and token-authenticated `api.guard.larkvine.org`.
 
 ![Orbio Guard landing page](docs/assets/landing-desktop.png)
 
@@ -168,7 +169,7 @@ docker build -t orbio-guard:release .
 The release gate currently includes:
 
 - Strict TypeScript checking.
-- 57 unit and integration tests.
+- 61 unit and integration tests.
 - Desktop and mobile Chromium rendering checks.
 - Production build and dependency audit.
 - Mock Chat Completions, Responses, Anthropic Messages, and SSE streaming checks.
