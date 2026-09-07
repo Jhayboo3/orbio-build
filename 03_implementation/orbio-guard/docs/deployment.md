@@ -1,6 +1,21 @@
 # Deployment guide
 
-Updated: 2026-09-06
+Updated: 2026-09-07
+
+## Cloudflare Pages
+
+The public site and synthetic dashboard can run on Cloudflare Pages without uploading
+the Orbio gateway key or local Guard state:
+
+Production: <https://orbio-guard.pages.dev>
+
+```bash
+npm run cloudflare:dev
+npm run cloudflare:deploy
+```
+
+See `docs/cloudflare.md` for the deployment boundary and Git integration settings. The
+Cloudflare adapter is a public showcase, not the live credential-bearing inference proxy.
 
 ## Native production run
 

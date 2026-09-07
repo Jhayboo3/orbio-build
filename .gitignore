@@ -4,6 +4,7 @@ dist/
 build/
 coverage/
 .cache/
+.wrangler/
 
 # Local configuration and secrets
 .env

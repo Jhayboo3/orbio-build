@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+    "build:cloudflare": "node scripts/build-cloudflare.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
@@ -21,7 +22,9 @@
     "video:pitch": "npm run build && node scripts/record-pitch-video.mjs",
     "video:technical": "npm run build && node scripts/record-technical-video.mjs",
     "submission:check": "npm run build && node scripts/submission-check.mjs",
-    "release:check": "npm run typecheck && npm test && npm run build && npm run test:ui && npm audit --audit-level=high"
+    "release:check": "npm run typecheck && npm test && npm run build && npm run test:ui && npm run build:cloudflare && npm audit --audit-level=high",
+    "cloudflare:dev": "npm run build:cloudflare && wrangler pages dev cloudflare/dist",
+    "cloudflare:deploy": "npm run build:cloudflare && wrangler pages deploy cloudflare/dist --project-name orbio-guard"
   },
   "engines": {
     "node": ">=22"
@@ -36,6 +39,7 @@
     "playwright": "^1.63.0",
     "tsx": "4.23.13",
     "typescript": "7.0.2",
-    "vitest": "5.0.0"
+    "vitest": "5.0.0",
+    "wrangler": "^4.129.0"
   }
 }

@@ -68,7 +68,11 @@ function render(snapshot) {
   elements.keyDetail.textContent = snapshot.key.remoteHasKey
     ? `Remote ${snapshot.key.remotePrefix || "key"}`
     : "No active remote key";
-  elements.keyLocal.textContent = snapshot.key.configured ? "Encrypted boundary" : "Not configured";
+  elements.keyLocal.textContent = snapshot.mode === "demo"
+    ? "Synthetic demo"
+    : snapshot.key.configured
+      ? "Encrypted boundary"
+      : "Not configured";
   elements.keyRemote.textContent = snapshot.key.remoteHasKey ? "Active" : "Unavailable";
   elements.keyLastUsed.textContent = snapshot.key.remoteLastUsedAt
     ? relativeTime(snapshot.key.remoteLastUsedAt)

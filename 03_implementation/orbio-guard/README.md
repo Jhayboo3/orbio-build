@@ -6,6 +6,8 @@ Orbio Guard is a local-first credit-control plane for teams running multiple AI 
 on one Orbio account. Agents receive separate Guard identities and policies while the
 real Orbio gateway key stays inside an owner-only local vault.
 
+Public Cloudflare demo: <https://orbio-guard.pages.dev>
+
 ![Orbio Guard landing page](docs/assets/landing-desktop.png)
 
 ## Why Guard
@@ -185,6 +187,7 @@ The same release gate and Docker build pass in GitHub Actions.
 - `docs/activity-ledger.md` - recorded and intentionally excluded data.
 - `docs/demo.md` - repeatable demo and narration.
 - `docs/deployment.md` - native and container operation.
+- `docs/cloudflare.md` - public Pages deployment and security boundary.
 - `docs/troubleshooting.md` - common auth, key, policy, budget, and container issues.
 - `docs/pitch-script.md` - timed product pitch.
 - `docs/technical-walkthrough.md` - timed engineering walkthrough.
