@@ -10,6 +10,8 @@
   inference endpoint visibility, and cloud environment status.
 - Same-origin validation for cloud admin mutations and derived key last-used status from
   confirmed inference spend.
+- Beginner developer onboarding for terminal, JavaScript, Python, Codex, Claude Code,
+  Cursor, VS Code, and JetBrains, available as a hosted guide and repository reference.
 
 ### Verified
 

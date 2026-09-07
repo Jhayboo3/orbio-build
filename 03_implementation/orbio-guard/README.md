@@ -9,6 +9,8 @@ real Orbio gateway key stays inside an owner-only local vault.
 Public Cloudflare demo: <https://orbio-guard.pages.dev>. The full Worker deployment uses
 Access-protected `guard.larkvine.org` and token-authenticated `api.guard.larkvine.org`.
 
+New developers can start at <https://orbio-guard.pages.dev/getting-started/>.
+
 ![Orbio Guard landing page](docs/assets/landing-desktop.png)
 
 ## Why Guard

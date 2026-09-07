@@ -87,6 +87,14 @@ try {
       throw new Error(`Technical page overflows at ${viewport.width}px.`);
     }
 
+    await page.goto(`${baseUrl}/getting-started`, { waitUntil: "networkidle" });
+    if ((await page.locator("h1").textContent())?.includes("guarded request") !== true) {
+      throw new Error("Developer setup heading did not render.");
+    }
+    if ((await page.evaluate(() => document.documentElement.scrollWidth)) > viewport.width) {
+      throw new Error(`Developer setup page overflows at ${viewport.width}px.`);
+    }
+
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
     await page.waitForSelector("#agents-table tr");
     if ((await page.locator("#agents-table tr").count()) !== 1) {

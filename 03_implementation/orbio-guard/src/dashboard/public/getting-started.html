@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Connect a terminal, application, or IDE to Orbio Guard." />
+    <title>Developer Setup — Orbio Guard</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="site-header shell dashboard-header">
+      <a class="brand" href="/">
+        <span class="brand-orb" aria-hidden="true"></span>
+        <span>Orbio Guard</span>
+      </a>
+      <nav class="nav-links" aria-label="Setup navigation">
+        <a href="#terminal">Terminal</a>
+        <a href="#ides">IDEs</a>
+        <a class="button button-small" href="/dashboard/">Operator console</a>
+      </nav>
+    </header>
+
+    <main class="guide shell">
+      <section class="guide-hero">
+        <p class="eyebrow">Developer onboarding</p>
+        <h1>From zero to a guarded request.</h1>
+        <p>
+          You do not need an Orbio account key. You need one Guard agent token from your
+          operator, an allowed model, and the Guard API URL.
+        </p>
+        <div class="guide-callout">
+          <strong>Never ask for or paste the shared Orbio gateway key.</strong>
+          <span>Your credential begins with <code>og_agent_</code>, not <code>sk-orbio-</code>.</span>
+        </div>
+      </section>
+
+      <section class="guide-section" id="request-access">
+        <div class="guide-heading"><span>01</span><div><p class="eyebrow">Request access</p><h2>Ask for one controlled identity.</h2></div></div>
+        <p>Send your Guard operator these four details:</p>
+        <div class="request-card">
+          <code>Project: customer-support</code>
+          <code>Models: openai/gpt-4o-mini</code>
+          <code>Daily budget: $2.00</code>
+          <code>Maximum per request: $0.10</code>
+        </div>
+        <p>The operator creates the agent in the dashboard and sends its token once. Store it immediately in your password manager or development secret store.</p>
+      </section>
+
+      <section class="guide-section" id="terminal">
+        <div class="guide-heading"><span>02</span><div><p class="eyebrow">Terminal check</p><h2>Prove the connection first.</h2></div></div>
+        <p>macOS or Linux:</p>
+        <pre><code>export ORBIO_GUARD_AGENT_TOKEN="og_agent_..."
+
+curl https://api.guard.larkvine.org/v1/chat/completions \
+  -H "Authorization: Bearer $ORBIO_GUARD_AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai/gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Reply with: connected"}]
+  }'</code></pre>
+        <p>Windows PowerShell:</p>
+        <pre><code>$env:ORBIO_GUARD_AGENT_TOKEN = "og_agent_..."
+
+$headers = @{
+  Authorization = "Bearer $env:ORBIO_GUARD_AGENT_TOKEN"
+  "Content-Type" = "application/json"
+}
+$body = @{
+  model = "openai/gpt-4o-mini"
+  messages = @(@{ role = "user"; content = "Reply with: connected" })
+} | ConvertTo-Json -Depth 4
+
+Invoke-RestMethod -Method Post `
+  -Uri "https://api.guard.larkvine.org/v1/chat/completions" `
+  -Headers $headers -Body $body</code></pre>
+        <p>A successful response proves your token, model policy, budget, Guard, and Orbio route all work.</p>
+      </section>
+
+      <section class="guide-section" id="application">
+        <div class="guide-heading"><span>03</span><div><p class="eyebrow">Application code</p><h2>Change the base URL, not your workflow.</h2></div></div>
+        <div class="guide-grid">
+          <article>
+            <h3>JavaScript / TypeScript</h3>
+            <pre><code>import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.ORBIO_GUARD_AGENT_TOKEN,
+  baseURL: "https://api.guard.larkvine.org/v1",
+});
+
+const result = await client.chat.completions.create({
+  model: "openai/gpt-4o-mini",
+  messages: [{ role: "user", content: "Hello" }],
+});</code></pre>
+          </article>
+          <article>
+            <h3>Python</h3>
+            <pre><code>import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["ORBIO_GUARD_AGENT_TOKEN"],
+    base_url="https://api.guard.larkvine.org/v1",
+)
+
+result = client.chat.completions.create(
+    model="openai/gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello"}],
+)</code></pre>
+          </article>
+        </div>
+        <div class="guide-callout">
+          <strong>Keep tokens outside source control.</strong>
+          <span>Add <code>.env</code> to <code>.gitignore</code>, use your deployment platform's secret manager in production, and never put a token in frontend browser code.</span>
+        </div>
+      </section>
+
+      <section class="guide-section" id="ides">
+        <div class="guide-heading"><span>04</span><div><p class="eyebrow">IDEs and agent tools</p><h2>Launch the tool with Guard configured.</h2></div></div>
+        <div class="tool-grid">
+          <article id="codex">
+            <span>Codex</span><h3>Use the Responses API.</h3>
+            <p>Export the token, then add this to <code>~/.codex/config.toml</code>:</p>
+            <pre><code>model = "openai/gpt-4o-mini"
+model_provider = "orbio_guard"
+
+[model_providers.orbio_guard]
+name = "Orbio Guard"
+base_url = "https://api.guard.larkvine.org/v1"
+env_key = "ORBIO_GUARD_AGENT_TOKEN"
+wire_api = "responses"
+requires_openai_auth = false
+supports_websockets = false</code></pre>
+          </article>
+          <article id="claude">
+            <span>Claude Code</span><h3>Use the Messages API.</h3>
+            <pre><code>export ORBIO_GUARD_AGENT_TOKEN="og_agent_..."
+export ANTHROPIC_BASE_URL="https://api.guard.larkvine.org"
+export ANTHROPIC_AUTH_TOKEN="$ORBIO_GUARD_AGENT_TOKEN"
+export ANTHROPIC_MODEL="anthropic/claude-sonnet-4"
+
+claude</code></pre>
+          </article>
+          <article id="cursor">
+            <span>Cursor</span><h3>Use a custom OpenAI provider when available.</h3>
+            <ol>
+              <li>Open Cursor Settings → Models.</li>
+              <li>Enable the OpenAI-compatible or custom provider.</li>
+              <li>Base URL: <code>https://api.guard.larkvine.org/v1</code></li>
+              <li>API key: your <code>og_agent_...</code> token.</li>
+              <li>Model: one allowed by your policy.</li>
+            </ol>
+            <p>If your Cursor version does not expose a base URL, use Codex, Claude Code, or your application SDK.</p>
+          </article>
+          <article id="editors">
+            <span>VS Code / JetBrains</span><h3>Use the integrated terminal.</h3>
+            <ol>
+              <li>Open the project in your IDE.</li>
+              <li>Open its integrated terminal.</li>
+              <li>Export <code>ORBIO_GUARD_AGENT_TOKEN</code>.</li>
+              <li>Run your app, Codex, or Claude Code from that terminal.</li>
+            </ol>
+            <p>For run configurations, add the token as a local environment variable. Do not commit workspace settings containing it.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="guide-section" id="errors">
+        <div class="guide-heading"><span>05</span><div><p class="eyebrow">Understand errors</p><h2>Guard failures are actionable.</h2></div></div>
+        <dl class="error-guide">
+          <div><dt>401 INVALID_AGENT_TOKEN</dt><dd>The token is missing, mistyped, disabled, or no longer valid. Ask the operator for a new identity.</dd></div>
+          <div><dt>403 MODEL_NOT_ALLOWED</dt><dd>Choose an allowed model or ask the operator to change the policy.</dd></div>
+          <div><dt>403 AGENT_PAUSED / AGENT_DISABLED</dt><dd>The operator stopped this identity. Do not bypass Guard; contact them.</dd></div>
+          <div><dt>429 REQUEST_LIMIT_EXCEEDED</dt><dd>The request ceiling is lower than Guard's reservation. Ask for an appropriate ceiling.</dd></div>
+          <div><dt>429 DAILY_BUDGET_EXCEEDED</dt><dd>The agent used its UTC daily allowance. Wait for rollover or request a policy change.</dd></div>
+        </dl>
+      </section>
+
+      <section class="guide-finish">
+        <p class="eyebrow">Ready</p>
+        <h2>One token. One policy. No shared key.</h2>
+        <p>Use the Guard URL anywhere an OpenAI-compatible base URL is accepted.</p>
+      </section>
+    </main>
+  </body>
+</html>
