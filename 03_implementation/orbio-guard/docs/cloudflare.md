@@ -19,6 +19,22 @@ policies, UTC daily budgets, reservations, spend reconciliation, and the metadat
 ledger. The Orbio gateway key is stored as an encrypted Worker secret. It is never placed
 in Durable Object state, static assets, logs, or source control.
 
+For self-service users, Access identity maps through a keyed HMAC to one private Durable
+Object. The user's Orbio OAuth tokens and gateway key are encrypted with AES-GCM before
+storage. New agent tokens carry a non-secret tenant locator so inference can reach the
+correct object; each object still stores only the complete token hash. The original owner
+remains on the `primary` object and existing unscoped tokens continue routing there.
+
+The browser onboarding flow is:
+
+1. Authenticate with Cloudflare Access.
+2. Select **Connect Orbio** and approve `orbio:credits` on Orbio.
+3. Return through `https://auth.guard.larkvine.org/orbio/callback`; state and PKCE are
+   validated inside that tenant's object.
+4. Provision an encrypted gateway key. If Orbio already has one, Guard requires explicit
+   confirmation because replacement invalidates its existing consumers.
+5. Create tenant-scoped agents and use their one-time tokens with the inference API.
+
 ```bash
 npm run cloudflare:live:dev
 npm run cloudflare:live:deploy
@@ -29,6 +45,9 @@ Required production configuration:
 - `ORBIO_GUARD_UPSTREAM_KEY`: encrypted Worker secret.
 - `ACCESS_TEAM_DOMAIN`: Cloudflare Access team URL.
 - `ACCESS_AUD`: Access application audience tag.
+- `ORBIO_DATA_ENCRYPTION_KEY`: encrypted Worker secret backed up in the operator's secure
+  recovery store. Losing it makes tenant connections unrecoverable.
+- `PRIMARY_ACCESS_EMAIL`: migration identity for the original `primary` tenant.
 
 Current Access application:
 
@@ -89,6 +108,9 @@ The full runtime was deployed and live-tested on 2026-09-07:
   and maps Codex's `gpt-5.6-sol` metadata slug to Orbio's `openai/gpt-5.6-sol` ID.
 - Codex Doctor passed 22 checks with no fallback-metadata warning, and a live
   `gpt-5.6-sol` session completed through Guard and Orbio.
+- A fresh primary migration agent completed live inference and was disabled/archived.
+  A separate tenant's OAuth start produced PKCE, tenant-bound state, exact HTTPS callback,
+  and MCP resource binding; no second account key was created during verification.
 
 Nested custom-domain DNS may remain negatively cached by a workstation resolver shortly
 after first deployment. Cloudflare authoritative DNS and `1.1.1.1` should be used to

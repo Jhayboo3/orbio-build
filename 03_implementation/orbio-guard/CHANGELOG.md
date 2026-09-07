@@ -20,14 +20,19 @@
   provider-qualified Orbio model IDs.
 - Beginner-first onboarding rewritten as a literal save, verify, configure, load, doctor,
   and launch checklist, with expected output and fixes for observed Keychain/Codex errors.
+- Multi-tenant Cloudflare isolation with one Durable Object per Access identity, scoped
+  agent tokens, Orbio OAuth + PKCE connection, encrypted per-tenant tokens/keys, session
+  refresh, and explicit existing-key replacement consent.
 
 ### Verified
 
-- 67 automated tests and desktop/mobile cloud-console rendering.
+- 69 automated tests and desktop/mobile cloud-console rendering.
 - Two disabled smoke identities archived while preserving their metadata-only history.
 - Real Codex text and shell-tool round trips completed through Guard and Orbio.
 - Authenticated catalog returned 430 models; Codex Doctor passed all 22 checks and a live
   `gpt-5.6-sol` request completed without fallback metadata.
+- Primary-tenant migration, cross-tenant agent isolation, encrypted credential round trip,
+  and tenant OAuth authorization URL were verified without rotating another account key.
 
 ## 0.1.0-rc.4 - 2026-09-07
 

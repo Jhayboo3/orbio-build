@@ -7,6 +7,7 @@ workers_dev = true
 ACCESS_AUD = "563dec62cb94746a7402a2bb4104ba97967be129ac72f0ccbae11a8e344e0dba"
 ACCESS_TEAM_DOMAIN = "https://proud-term-65c0.cloudflareaccess.com"
 ORBIO_GUARD_UPSTREAM_BASE_URL = "https://www.orbio.so/api/v1/"
+PRIMARY_ACCESS_EMAIL = "jeremiahoshiokhame@gmail.com"
 
 [assets]
 directory = "cloudflare/dist"
@@ -27,4 +28,8 @@ custom_domain = true
 
 [[routes]]
 pattern = "api.guard.larkvine.org"
+custom_domain = true
+
+[[routes]]
+pattern = "auth.guard.larkvine.org"
 custom_domain = true

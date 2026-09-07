@@ -50,7 +50,7 @@ Show `SECURITY.md` and the recovery tests.
 
 ## 2:20-2:40 - Verification
 
-> The release gate runs type checking, 67 automated tests, desktop and mobile Chromium
+> The release gate runs type checking, 69 automated tests, desktop and mobile Chromium
 > rendering, dependency audit, and Docker build. The container runs as a non-root user
 > and exposes health and key-aware readiness endpoints. The same gate passes in GitHub
 > Actions.

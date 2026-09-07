@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   activeCloudAgents,
   chatResponseToResponsesSse,
+  decryptCloudValue,
+  encryptCloudValue,
   evaluateCloudPolicy,
   extractCloudCostMicroUsd,
   extractCloudStreamCostMicroUsd,
@@ -10,6 +12,7 @@ import {
   matchesCloudModel,
   orbioModelId,
   responsesToChatRequest,
+  tenantFromCloudAgentToken,
   type CloudAgent,
 } from "../../src/cloudflare/core.js";
 
@@ -83,6 +86,26 @@ describe("Cloudflare Guard core", () => {
   it("maps native Codex slugs to provider-qualified Orbio IDs", () => {
     expect(orbioModelId("gpt-5.6-sol")).toBe("openai/gpt-5.6-sol");
     expect(orbioModelId("anthropic/claude-sonnet-5")).toBe("anthropic/claude-sonnet-5");
+  });
+
+  it("routes scoped agent tokens without exposing tenant identity secrets", () => {
+    expect(tenantFromCloudAgentToken("og_agent_t_ab_cd.abcdefghijklmnopqrstuvwxyz123456")).toBe("t_ab_cd");
+    expect(tenantFromCloudAgentToken("og_agent_legacytokenwithoutlocator")).toBe("primary");
+  });
+
+  it("encrypts tenant credentials with authenticated encryption", async () => {
+    const encrypted = await encryptCloudValue(
+      { access_token: "synthetic-access", refresh_token: "synthetic-refresh" },
+      "synthetic-32-byte-data-encryption-key",
+    );
+    expect(JSON.stringify(encrypted)).not.toContain("synthetic-access");
+    await expect(decryptCloudValue(encrypted, "wrong-key")).rejects.toThrow();
+    await expect(
+      decryptCloudValue(encrypted, "synthetic-32-byte-data-encryption-key"),
+    ).resolves.toEqual({
+      access_token: "synthetic-access",
+      refresh_token: "synthetic-refresh",
+    });
   });
 
   it("converts assistant text and usage to Responses SSE", () => {

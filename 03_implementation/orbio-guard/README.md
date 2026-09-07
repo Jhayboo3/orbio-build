@@ -190,6 +190,7 @@ The same release gate and Docker build pass in GitHub Actions.
 - `docs/agent-policies.md` - identities, model rules, and budgets.
 - `docs/agent-setup.md` - Codex, Claude Code, and Cursor configuration.
 - `docs/models.md` - live model discovery and client-specific model naming.
+- `docs/multi-tenancy.md` - tenant isolation, OAuth connection, encryption, and migration.
 - `docs/key-lifecycle.md` - create, rotate, revoke, and recovery behavior.
 - `docs/proxy.md` - protocols, accounting, errors, and limitations.
 - `docs/dashboard.md` - views, privacy, refresh, and visual verification.

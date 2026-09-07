@@ -8,6 +8,11 @@ const elements = {
   agentFilter: document.querySelector("#activity-agent-filter"),
   balance: document.querySelector("#balance-usd"),
   confirmed: document.querySelector("#confirmed-today"),
+  connectOrbio: document.querySelector("#connect-orbio"),
+  connectionDetail: document.querySelector("#connection-detail"),
+  connectionPanel: document.querySelector("#connection-panel"),
+  connectionStatus: document.querySelector("#connection-status"),
+  connectionTitle: document.querySelector("#connection-title"),
   copyToken: document.querySelector("#copy-token"),
   createdToken: document.querySelector("#created-token"),
   environmentBadge: document.querySelector("#environment-badge"),
@@ -20,6 +25,7 @@ const elements = {
   keyRemote: document.querySelector("#key-remote"),
   keyState: document.querySelector("#key-state"),
   operatorPanel: document.querySelector("#operator-panel"),
+  provisionOrbio: document.querySelector("#provision-orbio"),
   reserved: document.querySelector("#reserved-today"),
   systemLabel: document.querySelector("#system-label"),
   tokenDialog: document.querySelector("#token-dialog"),
@@ -57,7 +63,11 @@ async function loadDashboard(includeRemote) {
 function render(snapshot) {
   currentSnapshot = snapshot;
   const cloud = snapshot.deployment === "cloudflare";
-  elements.operatorPanel.hidden = !cloud;
+  const connection = snapshot.tenantConnection || { connected: true, provisioned: true };
+  const ready = !cloud || connection.provisioned;
+  elements.operatorPanel.hidden = !cloud || !ready;
+  elements.connectionPanel.hidden = !cloud || ready;
+  if (cloud && !ready) renderConnection(connection);
   elements.environmentBadge.textContent = cloud ? "Live Cloudflare" : snapshot.mode === "demo" ? "Demo" : "Local runtime";
   elements.systemLabel.textContent =
     snapshot.mode === "demo"
@@ -101,6 +111,20 @@ function render(snapshot) {
   renderAgents(snapshot.agents);
   updateActivityFilters(snapshot);
   renderActivity(filteredActivity(snapshot.activity));
+}
+
+function renderConnection(connection) {
+  if (!connection.connected) {
+    elements.connectionTitle.textContent = "Connect Orbio to continue.";
+    elements.connectionDetail.textContent = "Sign in to your own Orbio account. Guard will request credit and key-management permission.";
+    elements.connectOrbio.hidden = false;
+    elements.provisionOrbio.hidden = true;
+    return;
+  }
+  elements.connectionTitle.textContent = "Orbio connected. Protect a gateway key.";
+  elements.connectionDetail.textContent = "Guard will create a gateway key and encrypt it inside your isolated tenant vault.";
+  elements.connectOrbio.hidden = true;
+  elements.provisionOrbio.hidden = false;
 }
 
 function renderAgents(agents) {
@@ -250,6 +274,41 @@ async function adminRequest(path, options) {
   return body;
 }
 
+async function connectOrbio() {
+  elements.connectOrbio.disabled = true;
+  elements.connectionStatus.textContent = "Preparing secure connection…";
+  try {
+    const result = await adminRequest("/api/orbio/connect", { body: "{}", method: "POST" });
+    window.location.assign(result.authorizationUrl);
+  } catch (error) {
+    elements.connectionStatus.textContent = error.message;
+    elements.connectOrbio.disabled = false;
+  }
+}
+
+async function provisionOrbio(allowRotation = false) {
+  elements.provisionOrbio.disabled = true;
+  elements.connectionStatus.textContent = "Provisioning encrypted gateway key…";
+  try {
+    const result = await adminRequest("/api/orbio/provision", {
+      body: JSON.stringify({ allowRotation }),
+      method: "POST",
+    });
+    if (result.conflict) {
+      const confirmed = window.confirm(`${result.message}\n\nReplace the existing key? This cannot be undone.`);
+      if (confirmed) return provisionOrbio(true);
+      elements.connectionStatus.textContent = "Existing key was not changed.";
+      elements.provisionOrbio.disabled = false;
+      return;
+    }
+    elements.connectionStatus.textContent = `Gateway key protected (${result.fingerprint}).`;
+    await loadDashboard(true);
+  } catch (error) {
+    elements.connectionStatus.textContent = error.message;
+    elements.provisionOrbio.disabled = false;
+  }
+}
+
 function usdToMicro(value) {
   const match = value.trim().match(/^(\d+)(?:\.(\d{1,6}))?$/);
   if (!match) throw new Error("USD values need up to six decimal places.");
@@ -291,6 +350,8 @@ function escapeHtml(value) {
 
 loadDashboard(true);
 elements.agentForm?.addEventListener("submit", createAgent);
+elements.connectOrbio?.addEventListener("click", connectOrbio);
+elements.provisionOrbio?.addEventListener("click", () => provisionOrbio(false));
 elements.agents?.addEventListener("click", controlAgent);
 elements.agentFilter?.addEventListener("change", () => renderActivity(filteredActivity(currentSnapshot?.activity || [])));
 elements.eventFilter?.addEventListener("change", () => renderActivity(filteredActivity(currentSnapshot?.activity || [])));

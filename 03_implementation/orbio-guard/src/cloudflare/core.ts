@@ -135,6 +135,58 @@ export function orbioModelId(model: string): string {
   return model.includes("/") ? model : `openai/${model}`;
 }
 
+export function tenantFromCloudAgentToken(token: string): string {
+  const match = token.match(/^og_agent_([a-zA-Z0-9_-]{3,64})\.([a-zA-Z0-9_-]{20,})$/);
+  return match?.[1] ?? "primary";
+}
+
+export interface CloudEncryptedValue {
+  ciphertext: string;
+  iv: string;
+}
+
+export async function encryptCloudValue(
+  value: unknown,
+  secret: string,
+): Promise<CloudEncryptedValue> {
+  const key = await cloudEncryptionKey(secret);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const plaintext = new TextEncoder().encode(JSON.stringify(value));
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plaintext);
+  return { ciphertext: cloudBase64Url(ciphertext), iv: cloudBase64Url(iv) };
+}
+
+export async function decryptCloudValue<T>(
+  value: CloudEncryptedValue,
+  secret: string,
+): Promise<T> {
+  const key = await cloudEncryptionKey(secret);
+  const plaintext = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: cloudFromBase64Url(value.iv) },
+    key,
+    cloudFromBase64Url(value.ciphertext),
+  );
+  return JSON.parse(new TextDecoder().decode(plaintext)) as T;
+}
+
+async function cloudEncryptionKey(secret: string): Promise<CryptoKey> {
+  const raw = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
+  return crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
+}
+
+function cloudBase64Url(value: ArrayBuffer | Uint8Array): string {
+  const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+  return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+}
+
+function cloudFromBase64Url(value: string): Uint8Array<ArrayBuffer> {
+  const normalized = value.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const decoded = atob(normalized);
+  const bytes = new Uint8Array(new ArrayBuffer(decoded.length));
+  for (let index = 0; index < decoded.length; index += 1) bytes[index] = decoded.charCodeAt(index);
+  return bytes;
+}
+
 export function chatResponseToResponsesSse(raw: unknown): string {
   if (!raw || typeof raw !== "object") throw new Error("Chat response is invalid.");
   const chat = raw as Record<string, unknown>;
