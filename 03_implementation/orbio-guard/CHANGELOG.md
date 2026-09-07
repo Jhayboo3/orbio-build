@@ -12,6 +12,8 @@
   confirmed inference spend.
 - Beginner developer onboarding for terminal, JavaScript, Python, Codex, Claude Code,
   Cursor, VS Code, and JetBrains, available as a hosted guide and repository reference.
+- Accessible copy controls for every onboarding command and configuration block, with
+  language labels, clipboard fallback, and visible success feedback.
 
 ### Verified
 

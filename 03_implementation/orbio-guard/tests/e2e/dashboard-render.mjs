@@ -94,6 +94,23 @@ try {
     if ((await page.evaluate(() => document.documentElement.scrollWidth)) > viewport.width) {
       throw new Error(`Developer setup page overflows at ${viewport.width}px.`);
     }
+    const codeBlocks = await page.locator(".guide pre").count();
+    if ((await page.locator(".copy-code").count()) !== codeBlocks || codeBlocks === 0) {
+      throw new Error("Developer setup copy controls did not render for every code block.");
+    }
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { writeText: async (value) => { window.__copiedCode = value; } },
+      });
+    });
+    await page.locator(".copy-code").first().click();
+    if ((await page.locator(".copy-code").first().textContent()) !== "Copied") {
+      throw new Error("Developer setup copy control did not report success.");
+    }
+    if (!(await page.evaluate(() => Boolean(window.__copiedCode)))) {
+      throw new Error("Developer setup copy control did not write code to the clipboard.");
+    }
 
     await page.goto(`${baseUrl}/dashboard`, { waitUntil: "networkidle" });
     await page.waitForSelector("#agents-table tr");

@@ -178,6 +178,12 @@ tbody tr:last-child td { border-bottom: 0; }
 .request-card { display: grid; grid-template-columns: 1fr 1fr; max-width: 760px; margin-block: 28px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .request-card code { padding: 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 11px; }
 .guide pre { max-width: 100%; margin: 22px 0 34px; padding: 22px; overflow: auto; border-radius: 14px; background: var(--ink); color: var(--paper); font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.code-panel { position: relative; max-width: 100%; margin: 22px 0 34px; overflow: hidden; border-radius: 14px; background: var(--ink); }
+.code-panel .code-toolbar { min-height: 42px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px 0 18px; border-bottom: 1px solid rgba(240,240,236,.13); color: rgba(240,240,236,.48); font: 9px ui-monospace, monospace; text-transform: uppercase; letter-spacing: .1em; }
+.code-panel pre { margin: 0; border-radius: 0; }
+.copy-code { min-width: 72px; padding: 7px 11px; border: 1px solid rgba(240,240,236,.22); border-radius: 999px; background: transparent; color: var(--paper); cursor: pointer; font: 9px ui-monospace, monospace; text-transform: uppercase; letter-spacing: .08em; }
+.copy-code:hover, .copy-code:focus-visible { border-color: var(--neon); color: var(--neon); outline: 0; }
+.copy-code.copy-success { border-color: var(--neon); background: var(--neon); color: var(--ink); }
 .guide code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .guide-grid, .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-block: 30px; }
 .guide-grid article, .tool-grid article { min-width: 0; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,255,255,.18); }

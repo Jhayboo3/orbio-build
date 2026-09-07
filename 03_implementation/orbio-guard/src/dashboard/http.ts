@@ -12,6 +12,10 @@ const ASSETS = new Map([
     "/assets/dashboard.js",
     { file: "dashboard.js", type: "text/javascript; charset=utf-8" },
   ],
+  [
+    "/assets/getting-started.js",
+    { file: "getting-started.js", type: "text/javascript; charset=utf-8" },
+  ],
 ]);
 
 export async function serveDashboardRequest(

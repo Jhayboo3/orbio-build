@@ -12,6 +12,7 @@ await mkdir(new URL("getting-started/", output), { recursive: true });
 
 await cp(new URL("styles.css", publicAssets), new URL("assets/styles.css", output));
 await cp(new URL("dashboard.js", publicAssets), new URL("assets/dashboard.js", output));
+await cp(new URL("getting-started.js", publicAssets), new URL("assets/getting-started.js", output));
 await cp(new URL("index.html", publicAssets), new URL("index.html", output));
 await cp(new URL("dashboard.html", publicAssets), new URL("dashboard/index.html", output));
 await cp(new URL("technical.html", publicAssets), new URL("technical/index.html", output));
