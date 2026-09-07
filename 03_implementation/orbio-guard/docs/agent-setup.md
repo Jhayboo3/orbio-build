@@ -14,7 +14,7 @@ Name: your name or tool
 Project: your project
 Allowed model: openai/gpt-5.6-sol
 Daily budget: $5.00
-Per-request limit: $0.50
+Per-request limit: $0.25
 ```
 
 The operator uses `https://guard.larkvine.org/dashboard/` and gives you a one-time token

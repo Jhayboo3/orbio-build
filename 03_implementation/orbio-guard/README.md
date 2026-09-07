@@ -21,8 +21,10 @@ the fleet controls needed when that balance is shared across repositories, tools
 teammates:
 
 - Per-agent daily budgets and per-request ceilings.
+- Catalog-priced worst-case reservations with bounded output tokens.
 - Exact or wildcard model allow-lists.
 - Pause and disable kill switches.
+- Atomic cloud token rotation and public-request rate limiting.
 - Separate high-entropy Guard credentials instead of a shared upstream key.
 - Atomic spend reservations that prevent concurrent budget races.
 - Safe MCP-backed key creation, rotation, and revocation workflows.
@@ -177,7 +179,7 @@ docker build -t orbio-guard:release .
 The release gate currently includes:
 
 - Strict TypeScript checking.
-- 67 unit and integration tests.
+- 73 unit and integration tests.
 - Desktop and mobile Chromium rendering checks.
 - Production build and dependency audit.
 - Mock Chat Completions, Responses, Anthropic Messages, and SSE streaming checks.

@@ -67,6 +67,87 @@ export function evaluateCloudPolicy(
   return { allowed: true };
 }
 
+export interface OrbioModelPricing {
+  completion?: string;
+  prompt?: string;
+  overrides?: Array<{ completion?: string; prompt?: string }>;
+}
+
+export interface OrbioCatalogModel {
+  id: string;
+  pricing?: OrbioModelPricing;
+}
+
+export function priceBoundedCloudRequest(input: {
+  body: Record<string, unknown>;
+  bodyBytes: number;
+  model: OrbioCatalogModel;
+  path: string;
+}): { body: Record<string, unknown>; reservationMicroUsd: string } {
+  if (containsUnsupportedModality(input.body)) {
+    throw new Error("Image, audio, and video inputs require modality-aware pricing and are not enabled.");
+  }
+  const promptRate = maximumRate([
+    input.model.pricing?.prompt,
+    ...(input.model.pricing?.overrides?.map((value) => value.prompt) ?? []),
+  ]);
+  const completionRate = maximumRate([
+    input.model.pricing?.completion,
+    ...(input.model.pricing?.overrides?.map((value) => value.completion) ?? []),
+  ]);
+  if (promptRate === undefined || completionRate === undefined) {
+    throw new Error(`Model "${input.model.id}" has no enforceable text pricing.`);
+  }
+
+  const outputField = input.path === "/v1/responses"
+    ? "max_output_tokens"
+    : typeof input.body.max_completion_tokens === "number"
+      ? "max_completion_tokens"
+      : "max_tokens";
+  const requestedOutput = input.body[outputField];
+  const outputTokens = requestedOutput === undefined ? 1_024 : Number(requestedOutput);
+  if (!Number.isInteger(outputTokens) || outputTokens < 1 || outputTokens > 65_536) {
+    throw new Error(`${outputField} must be an integer between 1 and 65536.`);
+  }
+
+  // A UTF-8 byte is a conservative upper bound for tokenizer output on text/JSON input.
+  const maximumPicoUsd =
+    BigInt(input.bodyBytes) * promptRate + BigInt(outputTokens) * completionRate;
+  return {
+    body: { ...input.body, [outputField]: outputTokens },
+    reservationMicroUsd: ((maximumPicoUsd + 999_999n) / 1_000_000n).toString(),
+  };
+}
+
+function containsUnsupportedModality(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(containsUnsupportedModality);
+  if (!value || typeof value !== "object") return false;
+  const object = value as Record<string, unknown>;
+  const type = typeof object.type === "string" ? object.type.toLowerCase() : "";
+  if (["image", "image_url", "input_image", "audio", "input_audio", "video", "input_video"].includes(type)) {
+    return true;
+  }
+  return Object.values(object).some(containsUnsupportedModality);
+}
+
+function maximumRate(values: Array<string | undefined>): bigint | undefined {
+  const rates = values
+    .filter((value): value is string => typeof value === "string")
+    .map(parsePicoUsd)
+    .filter((value): value is bigint => value !== undefined);
+  return rates.reduce<bigint | undefined>(
+    (maximum, value) => maximum === undefined || value > maximum ? value : maximum,
+    undefined,
+  );
+}
+
+function parsePicoUsd(value: string): bigint | undefined {
+  const match = value.match(/^(\d+)(?:\.(\d{1,12}))?$/);
+  if (!match) return undefined;
+  return BigInt(match[1]!) * 1_000_000_000_000n +
+    BigInt((match[2] ?? "").padEnd(12, "0"));
+}
+
 export function extractCloudCostMicroUsd(body: string): string | undefined {
   try {
     return findCost(JSON.parse(body));
@@ -126,6 +207,9 @@ export function responsesToChatRequest(raw: unknown): Record<string, unknown> {
     model: orbioModelId(input.model),
     messages,
     stream: false,
+    ...(typeof input.max_output_tokens === "number"
+      ? { max_tokens: input.max_output_tokens }
+      : {}),
     ...(tools.length ? { tools } : {}),
     ...(input.tool_choice && input.tool_choice !== "auto" ? { tool_choice: input.tool_choice } : {}),
   };
@@ -138,6 +222,10 @@ export function orbioModelId(model: string): string {
 export function tenantFromCloudAgentToken(token: string): string {
   const match = token.match(/^og_agent_([a-zA-Z0-9_-]{3,64})\.([a-zA-Z0-9_-]{20,})$/);
   return match?.[1] ?? "primary";
+}
+
+export function isValidCloudAgentToken(token: string): boolean {
+  return /^og_agent_(?:[a-zA-Z0-9_-]{20,}|[a-zA-Z0-9_-]{3,64}\.[a-zA-Z0-9_-]{20,})$/.test(token);
 }
 
 export interface CloudEncryptedValue {

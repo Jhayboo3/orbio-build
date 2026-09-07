@@ -96,8 +96,9 @@ const response = await client.responses.create({
 
 1. Validate endpoint, JSON body, model, and protocol shape.
 2. Authenticate the Guard token.
-3. Enforce agent status, model allow-list, and request ceiling.
-4. Reserve spend atomically against the UTC daily budget.
+3. Enforce agent status and model allow-list.
+4. Bound output tokens, calculate worst-case text cost from current catalog pricing, and
+   reserve it atomically against request and UTC daily limits.
 5. Load the upstream key only inside the proxy process.
 6. Forward the request with the upstream key replacing the Guard credential.
 7. Forward buffered responses or stream SSE chunks to the client.
@@ -113,6 +114,8 @@ accounting.
 - Default reservation is `$0.25` when the agent has no per-request ceiling. Configure
   `ORBIO_GUARD_DEFAULT_RESERVATION_USD` conservatively for the expected workload.
 - Request bodies default to a 1 MiB maximum.
+- Cloud text/function requests fail closed for unpriced models or image/audio/video input
+  until modality-aware cost bounds are implemented.
 - One Guard proxy process may use a state directory at a time.
 - MCP-backed key creation and rotation are live-verified; revoke still requires deliberate
   live verification when stopping the active key is acceptable.

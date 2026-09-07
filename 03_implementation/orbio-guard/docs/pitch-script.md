@@ -52,7 +52,7 @@ Show the technical page and activity dashboard.
 > are encrypted with AES-GCM. Budgets are serialized atomically, provider cost replaces
 > each reservation, and prompts, responses, and raw credentials never enter the ledger.
 
-Show the proof values: 430 live models, 69 automated tests, zero audit vulnerabilities.
+Show the proof values: 430 governed Orbio models, 73 automated tests, zero audit vulnerabilities.
 
 ## 1:58-2:10 - Orbio value
 

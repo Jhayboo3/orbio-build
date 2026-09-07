@@ -8,9 +8,11 @@ import {
   extractCloudCostMicroUsd,
   extractCloudStreamCostMicroUsd,
   formatCloudUsd,
+  isValidCloudAgentToken,
   latestCloudKeyUse,
   matchesCloudModel,
   orbioModelId,
+  priceBoundedCloudRequest,
   responsesToChatRequest,
   tenantFromCloudAgentToken,
   type CloudAgent,
@@ -46,6 +48,46 @@ describe("Cloudflare Guard core", () => {
     expect(extractCloudStreamCostMicroUsd('data: {"response":{"usage":{"cost":0.12}}}\n\ndata: [DONE]\n')).toBe("120000");
   });
 
+  it("reserves the worst-case request cost and injects an output cap", () => {
+    expect(priceBoundedCloudRequest({
+      body: { model: "openai/gpt-test", messages: [] },
+      bodyBytes: 1_000,
+      model: {
+        id: "openai/gpt-test",
+        pricing: {
+          prompt: "0.000002",
+          completion: "0.00001",
+          overrides: [{ prompt: "0.000004", completion: "0.000015" }],
+        },
+      },
+      path: "/v1/chat/completions",
+    })).toEqual({
+      body: { model: "openai/gpt-test", messages: [], max_tokens: 1_024 },
+      reservationMicroUsd: "19360",
+    });
+  });
+
+  it("rejects unpriced models and unbounded output", () => {
+    expect(() => priceBoundedCloudRequest({
+      body: { model: "image/model" }, bodyBytes: 10, model: { id: "image/model" }, path: "/v1/responses",
+    })).toThrow("no enforceable text pricing");
+    expect(() => priceBoundedCloudRequest({
+      body: { model: "openai/gpt-test", max_output_tokens: 100_000 },
+      bodyBytes: 10,
+      model: { id: "openai/gpt-test", pricing: { prompt: "0.1", completion: "0.1" } },
+      path: "/v1/responses",
+    })).toThrow("between 1 and 65536");
+  });
+
+  it("rejects multimodal inputs until modality pricing is bounded", () => {
+    expect(() => priceBoundedCloudRequest({
+      body: { model: "openai/gpt-test", messages: [{ content: [{ type: "image_url", image_url: { url: "https://example.test/a.png" } }] }] },
+      bodyBytes: 100,
+      model: { id: "openai/gpt-test", pricing: { prompt: "0.1", completion: "0.1" } },
+      path: "/v1/chat/completions",
+    })).toThrow("modality-aware pricing");
+  });
+
   it("formats integer micro-dollars without floating point loss", () => {
     expect(formatCloudUsd("120000")).toBe("0.12");
     expect(formatCloudUsd("7000001")).toBe("7.000001");
@@ -71,6 +113,7 @@ describe("Cloudflare Guard core", () => {
         { type: "function_call_output", call_id: "call-1", output: "done" },
       ],
       tools: [{ type: "function", name: "read_file", description: "Read", parameters: { type: "object" }, strict: true }],
+      max_output_tokens: 512,
     })).toEqual({
       model: "openai/gpt-4o-mini",
       messages: [
@@ -79,6 +122,7 @@ describe("Cloudflare Guard core", () => {
         { role: "tool", tool_call_id: "call-1", content: "done" },
       ],
       stream: false,
+      max_tokens: 512,
       tools: [{ type: "function", function: { name: "read_file", description: "Read", parameters: { type: "object" }, strict: true } }],
     });
   });
@@ -91,6 +135,12 @@ describe("Cloudflare Guard core", () => {
   it("routes scoped agent tokens without exposing tenant identity secrets", () => {
     expect(tenantFromCloudAgentToken("og_agent_t_ab_cd.abcdefghijklmnopqrstuvwxyz123456")).toBe("t_ab_cd");
     expect(tenantFromCloudAgentToken("og_agent_legacytokenwithoutlocator")).toBe("primary");
+  });
+
+  it("rejects malformed credentials before tenant routing", () => {
+    expect(isValidCloudAgentToken("not-a-token")).toBe(false);
+    expect(isValidCloudAgentToken("og_agent_tenant.short")).toBe(false);
+    expect(isValidCloudAgentToken("og_agent_primary.abcdefghijklmnopqrstuvwxyz123456")).toBe(true);
   });
 
   it("encrypts tenant credentials with authenticated encryption", async () => {

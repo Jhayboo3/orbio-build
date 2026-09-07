@@ -15,6 +15,7 @@ const elements = {
   connectionTitle: document.querySelector("#connection-title"),
   copyToken: document.querySelector("#copy-token"),
   createdToken: document.querySelector("#created-token"),
+  demoBoundary: document.querySelector("#demo-boundary"),
   environmentBadge: document.querySelector("#environment-badge"),
   eventFilter: document.querySelector("#activity-event-filter"),
   formStatus: document.querySelector("#form-status"),
@@ -65,6 +66,7 @@ function render(snapshot) {
   const cloud = snapshot.deployment === "cloudflare";
   const connection = snapshot.tenantConnection || { connected: true, provisioned: true };
   const ready = !cloud || connection.provisioned;
+  elements.demoBoundary.hidden = cloud;
   elements.operatorPanel.hidden = !cloud || !ready;
   elements.connectionPanel.hidden = !cloud || ready;
   if (cloud && !ready) renderConnection(connection);
@@ -191,7 +193,10 @@ function agentControls(agent) {
   const disable = agent.status !== "disabled"
     ? '<button class="danger-action" data-agent-action="disabled">Disable</button>'
     : '<button data-agent-action="archive">Archive</button>';
-  return `<div class="agent-actions" data-agent-id="${escapeHtml(agent.id)}">${statusAction}${disable}</div>`;
+  const rotate = agent.status !== "disabled"
+    ? '<button data-agent-action="rotate-token">Rotate token</button>'
+    : "";
+  return `<div class="agent-actions" data-agent-id="${escapeHtml(agent.id)}">${statusAction}${rotate}${disable}</div>`;
 }
 
 function updateActivityFilters(snapshot) {
@@ -251,6 +256,15 @@ async function controlAgent(event) {
   try {
     if (action === "archive") {
       await adminRequest(`/api/admin/agents/${encodeURIComponent(agentId)}/archive`, { method: "PUT" });
+    } else if (action === "rotate-token") {
+      const confirmed = window.confirm("Rotate this token? The current token will stop working immediately.");
+      if (!confirmed) {
+        button.disabled = false;
+        return;
+      }
+      const response = await adminRequest(`/api/admin/agents/${encodeURIComponent(agentId)}/rotate-token`, { method: "POST" });
+      elements.createdToken.textContent = response.token;
+      elements.tokenDialog.showModal();
     } else {
       await adminRequest(`/api/admin/agents/${encodeURIComponent(agentId)}/status`, {
         body: JSON.stringify({ status: action }),

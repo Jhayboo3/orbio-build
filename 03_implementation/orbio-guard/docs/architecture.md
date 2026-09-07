@@ -108,8 +108,9 @@ key lifecycle. The gateway is authoritative for model routing and provider-repor
 - Missing Access identity: redirect before operator UI access.
 - Direct Worker bypass: `403 ACCESS_REQUIRED`.
 - Unknown agent token: `401` before credential access.
-- Paused, disabled, or disallowed agent: `403` before credential access.
-- Request or daily limit: `429` before credential access.
+- Paused, disabled, or disallowed agent: `403` before gateway forwarding.
+- Catalog-priced request or daily bound: `429` before gateway forwarding.
+- Unpriced or multimodal input: fail closed before gateway forwarding.
 - Unconnected tenant: `503 ORBIO_NOT_CONNECTED`.
 - Existing Orbio key: stop and require explicit destructive replacement confirmation.
 - Interrupted request: conservatively confirm stale reservation after TTL.

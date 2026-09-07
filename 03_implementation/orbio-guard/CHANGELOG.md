@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Catalog-priced hard admission bounds using fixed-point arithmetic, conservative input
+  token bounds, injected output limits, and the highest applicable model rate.
+- Cloud token rotation, model-catalog caching, malformed-token rejection before tenant
+  lookup, and a 120 requests/minute Cloudflare rate-limit binding.
+- Explicit public synthetic-data banner and a contest-ready repository front door.
+
+### Changed
+
+- Public claims now scope Guard to text and function-tool agents and describe 430 models
+  as Orbio coverage governed by Guard.
+
+### Verified
+
+- 73 automated tests, including pricing bounds, multimodal fail-closed behavior,
+  credential encryption, token routing, and protocol adaptation.
+
 ## 0.1.0-rc.5 - 2026-09-07
 
 ### Added

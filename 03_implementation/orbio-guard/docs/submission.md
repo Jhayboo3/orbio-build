@@ -39,7 +39,7 @@ encrypted per tenant.
 - Provider-reported spend reconciliation.
 - Orbio OAuth dynamic registration and HTTPS callback acceptance.
 - One encrypted Durable Object tenant per authenticated user.
-- 69 automated tests and zero dependency vulnerabilities.
+- 73 automated tests and zero dependency vulnerabilities.
 - No prompts, responses, raw keys, or tokens in the audit ledger.
 
 ## Required artifacts

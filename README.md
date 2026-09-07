@@ -1,29 +1,83 @@
-# ORBIO BUILD — master project folder
+# Orbio Guard
 
-Master folder for the **Orbio Build Week** hackathon project (**"Orbio Guard"** — a
-credit-control / multi-agent spend layer on top of Orbio's MCP).
+**Connect Orbio. Control every agent.**
 
-- **Location:** `/Users/admin/Developer/orbio-build`
-- **Self-contained:** Yes. Move the whole folder anywhere; nothing outside is required.
-- **Status:** Research complete · proxy, key lifecycle, ledger, dashboard, agent setup,
-  demo automation, crash recovery, and release packaging active in
-  `03_implementation/orbio-guard/`.
+Orbio Guard is a multi-tenant control plane for text and tool-using AI agents powered by
+Orbio. Users connect their own Orbio account, then issue separate agent identities with
+hard admission budgets, model policies, request ceilings, kill switches, and metadata-
+only auditing. OAuth tokens and gateway keys remain encrypted per tenant.
 
-## Contents
+[Live product](https://orbio-guard.pages.dev) ·
+[Access-protected app](https://guard.larkvine.org/dashboard/) ·
+[Developer setup](https://orbio-guard.pages.dev/getting-started/) ·
+[v0.1.0-rc.5](https://github.com/Jhayboo3/orbio-build/releases/tag/v0.1.0-rc.5)
 
-| Folder | Purpose |
-| --- | --- |
-| `00_research/` | Verified Orbio facts, prior-hackathon research, winning-patterns playbook |
-| `01_assets/` | Downloaded reference assets (build-week PDF, Orbio homepage CSS evidence) |
-| `02_concept/` | Product concept, UI design system, MVP architecture |
-| `03_implementation/` | Source/config for the build (created during implementation) |
-| `04_references/` | All source URLs & links used during research |
+![Orbio Guard](03_implementation/orbio-guard/docs/assets/landing-desktop.png)
 
-## How to continue
-1. Read `02_concept/product-concept-orbio-guard.md` (pitch + scope) and
-   `02_concept/ui-design-system.md` (visual spec: Orbio "paper & ink" homage).
-2. Follow `03_implementation/implementation-orbio.md` for the phased build plan,
-   implementation guides, test checks, demo gates, and release checklist.
-3. Scaffold the app inside `03_implementation/orbio-guard/` (planned stack in
-   `02_concept/architecture-mvp.md`).
-4. Keep this README updated as the project grows.
+## Why
+
+One shared model key gives every agent access to the same account balance. Guard adds the
+operational layer needed for fleets:
+
+- Separate one-time, hashed credentials per agent.
+- Model allow-lists, pause/disable controls, and token rotation.
+- Catalog-priced worst-case reservations bounded by output tokens.
+- UTC daily budgets and per-request ceilings serialized in Durable Objects.
+- Provider-cost reconciliation and conservative crash recovery.
+- No prompts, model responses, authorization headers, or raw credentials in the ledger.
+
+## How It Works
+
+```text
+Cloudflare Access user
+  -> isolated tenant Durable Object
+  -> encrypted Orbio OAuth tokens and gateway key
+  -> controlled Guard agents
+
+Codex / Claude Code / SDK
+  -> Guard agent token
+  -> status + model + hard request/daily admission bound
+  -> Orbio gateway
+  -> actual cost reconciliation
+```
+
+Guard dynamically registers an Orbio OAuth client and uses authorization code + PKCE.
+Each verified user maps to a private tenant. Agent tokens carry a non-secret tenant
+locator for routing while authorization compares the complete token hash.
+
+## Live Evidence
+
+- 430 models returned by the authenticated Orbio catalog.
+- GPT-5.6 Sol inference through Guard and Orbio.
+- Codex text and shell-tool round trips through the Responses adapter.
+- Cloudflare Access enforcement and direct Worker bypass rejection.
+- Cross-tenant isolation and AES-GCM credential encryption.
+- 73 automated tests, responsive browser checks, and zero dependency vulnerabilities.
+
+## Repository
+
+The application lives in [`03_implementation/orbio-guard`](03_implementation/orbio-guard).
+
+```bash
+cd 03_implementation/orbio-guard
+npm ci
+npm run release:check
+```
+
+Key documentation:
+
+- [Architecture](03_implementation/orbio-guard/docs/architecture.md)
+- [Multi-tenancy](03_implementation/orbio-guard/docs/multi-tenancy.md)
+- [Security](03_implementation/orbio-guard/SECURITY.md)
+- [Developer setup](03_implementation/orbio-guard/docs/agent-setup.md)
+- [Model selection](03_implementation/orbio-guard/docs/models.md)
+- [Build Week submission](03_implementation/orbio-guard/docs/submission.md)
+
+## Build Week Videos
+
+- [92.5-second product pitch](03_implementation/orbio-guard/docs/assets/orbio-guard-pitch-draft.mp4)
+- [112-second technical walkthrough](03_implementation/orbio-guard/docs/assets/orbio-guard-technical-draft.mp4)
+
+Public dashboard data is synthetic and labeled. Live tenant data is protected by
+Cloudflare Access. Guard currently hard-bounds text and function-tool requests; image,
+audio, and video inputs fail closed until modality-aware pricing is implemented.

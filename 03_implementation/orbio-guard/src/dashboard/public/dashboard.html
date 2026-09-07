@@ -21,6 +21,11 @@
     </header>
 
     <main class="dashboard shell">
+      <aside class="demo-boundary" id="demo-boundary">
+        <strong>Public demonstration</strong>
+        <span>Synthetic account data · Real Guard policy behavior</span>
+        <a href="https://guard.larkvine.org/dashboard/">Open Access-protected live app</a>
+      </aside>
       <section class="dashboard-title">
         <div>
           <p class="eyebrow">Fleet control</p>
@@ -58,9 +63,9 @@
           <label>Name<input name="name" required maxlength="80" placeholder="Research agent" /></label>
           <label>Project<input name="project" maxlength="80" placeholder="customer-insights" /></label>
           <label>Daily budget (USD)<input name="dailyBudgetUsd" required inputmode="decimal" value="5.00" /></label>
-          <label>Per request (USD)<input name="maxRequestUsd" required inputmode="decimal" value="0.50" /></label>
+          <label>Per request (USD)<input name="maxRequestUsd" required inputmode="decimal" value="0.25" /></label>
           <label class="form-wide">Allowed models<input name="models" required value="openai/*" aria-describedby="model-help" /></label>
-          <small class="form-wide" id="model-help">Comma-separated exact IDs or suffix wildcards.</small>
+          <small class="form-wide" id="model-help">Comma-separated exact IDs or suffix wildcards. Requests default to 1,024 output tokens and reserve a catalog-priced worst-case cost.</small>
           <button class="button form-submit" type="submit">Create agent</button>
           <span class="form-status" id="form-status" role="status"></span>
         </form>

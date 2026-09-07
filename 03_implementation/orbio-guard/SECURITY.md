@@ -52,6 +52,9 @@ processed the request. Operators may choose `release`, but that can undercount s
 - Cursor custom-base-URL support varies by installed version.
 - The Codex adapter targets text and function tools; future Responses modalities may
   require additional protocol translation.
+- Hard cloud limits rely on Orbio's advertised catalog rates. Guard uses the highest base
+  or long-context rate, bounds output tokens, and upper-bounds input tokens by UTF-8 bytes.
+  If provider-reported cost exceeds that bound, the agent is disabled immediately.
 
 ## Reporting
 

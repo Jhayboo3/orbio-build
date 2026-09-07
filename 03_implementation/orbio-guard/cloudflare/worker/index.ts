@@ -9,14 +9,17 @@ import {
   extractCloudCostMicroUsd,
   extractCloudStreamCostMicroUsd,
   formatCloudUsd,
+  isValidCloudAgentToken,
   latestCloudKeyUse,
   orbioModelId,
+  priceBoundedCloudRequest,
   responsesToChatRequest,
   tenantFromCloudAgentToken,
   validateCloudModelPatterns,
   type CloudAgent,
   type CloudAgentStatus,
   type CloudEncryptedValue,
+  type OrbioCatalogModel,
 } from "../../src/cloudflare/core.js";
 
 interface Env {
@@ -29,6 +32,7 @@ interface Env {
   ORBIO_GUARD_UPSTREAM_KEY: string;
   ORBIO_DATA_ENCRYPTION_KEY: string;
   PRIMARY_ACCESS_EMAIL: string;
+  REQUEST_RATE_LIMITER: RateLimit;
 }
 
 interface TenantConnection {
@@ -106,6 +110,22 @@ export class GuardCoordinator extends DurableObject<Env> {
         }
         return Response.json({ agent: safeAgent(agent) });
       }
+      if (request.method === "POST" && url.pathname === "/preflight") {
+        const input = await request.json<{ model?: unknown; token?: unknown }>();
+        if (typeof input.token !== "string" || typeof input.model !== "string") {
+          throw new Error("Preflight input is invalid.");
+        }
+        const tokenHash = await sha256(input.token);
+        const agent = (await this.read()).agents.find((candidate) =>
+          safeEqual(candidate.tokenHash, tokenHash));
+        if (!agent || agent.archivedAt) {
+          return guardError(401, "INVALID_AGENT_TOKEN", "The Guard agent token is invalid.");
+        }
+        const decision = evaluateCloudPolicy(agent, { estimatedCostMicroUsd: "0", model: input.model });
+        return decision.allowed
+          ? Response.json({ agent: safeAgent(agent) })
+          : guardError(403, decision.code, decision.message);
+      }
       if (request.method === "POST" && url.pathname === "/confirm") {
         const input = await request.json<{ confirmedMicroUsd: string; reservationId: string }>();
         await this.confirm(input.reservationId, input.confirmedMicroUsd);
@@ -154,6 +174,10 @@ export class GuardCoordinator extends DurableObject<Env> {
       const archiveMatch = url.pathname.match(/^\/agents\/([^/]+)\/archive$/);
       if (archiveMatch && request.method === "PUT") {
         return Response.json(await this.archiveAgent(archiveMatch[1]!));
+      }
+      const rotateMatch = url.pathname.match(/^\/agents\/([^/]+)\/rotate-token$/);
+      if (rotateMatch && request.method === "POST") {
+        return Response.json(await this.rotateAgentToken(rotateMatch[1]!, url.searchParams.get("tenant") ?? "primary"));
       }
       return guardError(404, "NOT_FOUND", "Coordinator endpoint not found.");
     } catch (error) {
@@ -250,6 +274,7 @@ export class GuardCoordinator extends DurableObject<Env> {
       const located = findReservation(state, reservationId);
       if (!located) return;
       located.budget.reservations.splice(located.index, 1);
+      const exceededBound = BigInt(confirmedMicroUsd) > BigInt(located.reservation.amountMicroUsd);
       located.budget.confirmedMicroUsd = (
         BigInt(located.budget.confirmedMicroUsd) + BigInt(confirmedMicroUsd)
       ).toString();
@@ -258,6 +283,19 @@ export class GuardCoordinator extends DurableObject<Env> {
         amountMicroUsd: confirmedMicroUsd,
         type: "SPEND_CONFIRMED",
       });
+      if (exceededBound) {
+        const agent = state.agents.find((candidate) => candidate.id === located.reservation.agentId);
+        if (agent) {
+          agent.status = "disabled";
+          agent.updatedAt = new Date().toISOString();
+        }
+        appendEvent(state, {
+          agentId: located.reservation.agentId,
+          amountMicroUsd: confirmedMicroUsd,
+          reasonCode: "PROVIDER_COST_EXCEEDED_BOUND",
+          type: "REQUEST_BLOCKED",
+        });
+      }
     });
   }
 
@@ -339,6 +377,21 @@ export class GuardCoordinator extends DurableObject<Env> {
       appendEvent(state, { agentId, type: "AGENT_ARCHIVED" });
       return safeAgent(agent);
     });
+  }
+
+  private async rotateAgentToken(agentId: string, tenantLocator: string) {
+    if (!/^[a-zA-Z0-9_-]{3,64}$/.test(tenantLocator)) throw new Error("Tenant locator is invalid.");
+    const token = `og_agent_${tenantLocator}.${randomToken()}`;
+    const tokenHash = await sha256(token);
+    const agent = await this.update((state) => {
+      const current = state.agents.find((candidate) => candidate.id === agentId);
+      if (!current || current.archivedAt) throw new Error("Agent was not found.");
+      current.tokenHash = tokenHash;
+      current.updatedAt = new Date().toISOString();
+      appendEvent(state, { agentId, type: "AGENT_TOKEN_ROTATED" });
+      return safeAgent(current);
+    });
+    return { agent, token };
   }
 
   private async dashboard(includeRemote: boolean) {
@@ -630,6 +683,12 @@ export default {
         : guardError(404, "NOT_FOUND", "OAuth callback endpoint not found.");
     }
     if (isInferenceHost) {
+      if ((ROUTES.has(url.pathname) || url.pathname === "/v1/models") && !validAgentCredential(request)) {
+        return guardError(401, "INVALID_AGENT_TOKEN", "The Guard agent token is invalid.");
+      }
+      const rateKey = await requestRateKey(request);
+      const rate = await env.REQUEST_RATE_LIMITER.limit({ key: rateKey });
+      if (!rate.success) return guardError(429, "RATE_LIMITED", "Too many Guard requests. Retry shortly.");
       if (request.method === "GET" && url.pathname === "/healthz") {
         return json({ status: "ok" });
       }
@@ -721,6 +780,16 @@ export default {
         new Request(`https://guard.internal/agents/${archiveMatch[1]}/archive`, request),
       );
     }
+    const rotateMatch = url.pathname.match(/^\/api\/admin\/agents\/([^/]+)\/rotate-token$/);
+    if (rotateMatch && request.method === "POST") {
+      if (!sameOrigin(request, env)) {
+        return guardError(403, "INVALID_ORIGIN", "Admin mutations require the operator origin.");
+      }
+      return coordinator.fetch(new Request(
+        `https://guard.internal/agents/${rotateMatch[1]}/rotate-token?tenant=${identity.tenantLocator}`,
+        request,
+      ));
+    }
     if (url.pathname.startsWith("/api/")) {
       return guardError(404, "NOT_FOUND", "Admin endpoint not found.");
     }
@@ -744,13 +813,36 @@ async function proxyInference(
     if (new TextEncoder().encode(bodyText).byteLength > 1_048_576) {
       return guardError(413, "BODY_TOO_LARGE", "Request body exceeds 1048576 bytes.");
     }
-    const body = JSON.parse(bodyText) as { model?: unknown; stream?: unknown };
+    const body = JSON.parse(bodyText) as Record<string, unknown> & { model?: unknown; stream?: unknown };
     if (typeof body.model !== "string") return guardError(400, "INVALID_REQUEST", "Request body is invalid.");
     const token = bearerToken(request);
-    const estimatedCostMicroUsd = "50000";
     const policyModel = orbioModelId(body.model);
+    const preflight = await coordinator.fetch("https://guard.internal/preflight", {
+      body: JSON.stringify({ model: policyModel, token }),
+      method: "POST",
+    });
+    if (!preflight.ok) return proxyGuardError(preflight);
+
+    const requestPath = new URL(request.url).pathname;
+    const credentials = tenantLocator === "primary"
+      ? { baseUrl: env.ORBIO_GUARD_UPSTREAM_BASE_URL, key: env.ORBIO_GUARD_UPSTREAM_KEY }
+      : await tenantCredentials(coordinator, env.ORBIO_GUARD_UPSTREAM_BASE_URL);
+    if (!credentials) return guardError(503, "ORBIO_NOT_CONNECTED", "This tenant has not provisioned an Orbio key.");
+    const model = await loadCatalogModel(credentials, tenantLocator, policyModel);
+    if (!model) return guardError(400, "MODEL_NOT_AVAILABLE", `Model "${policyModel}" is not in the current Orbio catalog.`);
+    let priced;
+    try {
+      priced = priceBoundedCloudRequest({
+        body,
+        bodyBytes: new TextEncoder().encode(bodyText).byteLength,
+        model,
+        path: requestPath,
+      });
+    } catch (error) {
+      return guardError(400, "UNBOUNDED_REQUEST", errorMessage(error));
+    }
     const authorizationResponse = await coordinator.fetch("https://guard.internal/authorize", {
-      body: JSON.stringify({ estimatedCostMicroUsd, model: policyModel, requestId, token }),
+      body: JSON.stringify({ estimatedCostMicroUsd: priced.reservationMicroUsd, model: policyModel, requestId, token }),
       method: "POST",
     });
     const authorization = await authorizationResponse.json<{
@@ -764,20 +856,12 @@ async function proxyInference(
       return guardError(status, authorization.error.code, authorization.error.message);
     }
     const reservation = authorization.reservation!;
-    const requestPath = new URL(request.url).pathname;
     const adaptsResponses = requestPath === "/v1/responses";
     const upstreamPath = adaptsResponses ? "chat/completions" : ROUTES.get(requestPath)!;
-    const credentials = tenantLocator === "primary"
-      ? { baseUrl: env.ORBIO_GUARD_UPSTREAM_BASE_URL, key: env.ORBIO_GUARD_UPSTREAM_KEY }
-      : await tenantCredentials(coordinator, env.ORBIO_GUARD_UPSTREAM_BASE_URL);
-    if (!credentials) {
-      await release(coordinator, reservation.id);
-      return guardError(503, "ORBIO_NOT_CONNECTED", "This tenant has not provisioned an Orbio key.");
-    }
     const upstreamUrl = new URL(upstreamPath, trailingSlash(credentials.baseUrl));
     const upstreamBodyText = adaptsResponses
-      ? JSON.stringify(responsesToChatRequest(body))
-      : JSON.stringify({ ...body, model: policyModel });
+      ? JSON.stringify(responsesToChatRequest(priced.body))
+      : JSON.stringify({ ...priced.body, model: policyModel });
     let upstream: Response;
     try {
       upstream = await fetch(upstreamUrl, {
@@ -858,10 +942,63 @@ async function proxyModels(
     ? { baseUrl: env.ORBIO_GUARD_UPSTREAM_BASE_URL, key: env.ORBIO_GUARD_UPSTREAM_KEY }
     : await tenantCredentials(coordinator, env.ORBIO_GUARD_UPSTREAM_BASE_URL);
   if (!credentials) return guardError(503, "ORBIO_NOT_CONNECTED", "This tenant has not provisioned an Orbio key.");
+  const catalog = await loadCatalog(credentials);
+  return json(catalog);
+}
+
+async function loadCatalogModel(
+  credentials: { baseUrl: string; key: string },
+  tenantLocator: string,
+  modelId: string,
+): Promise<OrbioCatalogModel | undefined> {
+  const catalog = await loadCatalog(credentials);
+  const models = Array.isArray((catalog as { data?: unknown }).data)
+    ? (catalog as { data: OrbioCatalogModel[] }).data
+    : [];
+  return models.find((model) => model.id === modelId);
+}
+
+let catalogCache: { expiresAt: number; value: unknown } | undefined;
+
+async function loadCatalog(credentials: { baseUrl: string; key: string }): Promise<unknown> {
+  if (catalogCache && catalogCache.expiresAt > Date.now()) return catalogCache.value;
   const response = await fetch(new URL("models", trailingSlash(credentials.baseUrl)), {
     headers: { authorization: `Bearer ${credentials.key}` },
   });
-  return copyUpstream(response, response.body ?? "", crypto.randomUUID());
+  if (!response.ok) throw new Error("Orbio model catalog is unavailable.");
+  const value = await response.json();
+  catalogCache = { expiresAt: Date.now() + 300_000, value };
+  return value;
+}
+
+async function proxyGuardError(response: Response): Promise<Response> {
+  const value: { error?: { code?: string; message?: string } } = await response
+    .json<{ error?: { code?: string; message?: string } }>()
+    .catch(() => ({}));
+  return guardError(
+    response.status,
+    value.error?.code ?? "REQUEST_BLOCKED",
+    value.error?.message ?? "Guard blocked the request.",
+  );
+}
+
+async function requestRateKey(request: Request): Promise<string> {
+  const authorization = request.headers.get("authorization");
+  const apiKey = request.headers.get("x-api-key");
+  const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1] ?? apiKey;
+  if (token) {
+    if (!isValidCloudAgentToken(token)) {
+      return "malformed-token";
+    }
+    return `token:${(await sha256(token)).slice(0, 24)}`;
+  }
+  return `anonymous:${request.headers.get("cf-connecting-ip") ?? "unknown"}`;
+}
+
+function validAgentCredential(request: Request): boolean {
+  const authorization = request.headers.get("authorization");
+  const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1] ?? request.headers.get("x-api-key");
+  return Boolean(token && isValidCloudAgentToken(token));
 }
 
 async function reconcileStream(

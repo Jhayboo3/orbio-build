@@ -48,7 +48,7 @@ Show a sanitized Codex text and `pwd` tool round trip.
 
 ## 2:12-2:30 - Verification
 
-> The release gate covers 69 automated tests, strict Node and Worker typechecking,
+> The release gate covers 73 automated tests, strict Node and Worker typechecking,
 > desktop and mobile rendering, production builds, dependency audit, and GitHub Actions.
 > Live verification covers OAuth registration, model catalog, key lifecycle, Codex text
 > and tools, cost reconciliation, tenant isolation, Access enforcement, and Cloudflare

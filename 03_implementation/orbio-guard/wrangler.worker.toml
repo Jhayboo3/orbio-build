@@ -18,6 +18,14 @@ run_worker_first = true
 name = "GUARD"
 class_name = "GuardCoordinator"
 
+[[ratelimits]]
+name = "REQUEST_RATE_LIMITER"
+namespace_id = "41001"
+
+  [ratelimits.simple]
+  limit = 120
+  period = 60
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["GuardCoordinator"]

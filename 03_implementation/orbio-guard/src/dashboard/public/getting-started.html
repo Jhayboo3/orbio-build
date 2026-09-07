@@ -40,7 +40,7 @@
         <div class="guide-heading"><span>01</span><div><p class="eyebrow">Before you start</p><h2>Get your personal agent.</h2></div></div>
         <div class="human-steps">
           <article><strong>1</strong><div><h3>Ask your operator</h3><p>Tell them your project, model, daily budget, and request limit. If you are the operator, open the operator console.</p></div></article>
-          <article><strong>2</strong><div><h3>Create the agent</h3><p>For Codex, use allowed model <code>openai/gpt-5.6-sol</code>. A reasonable starting policy is <code>$5/day</code> and <code>$0.50/request</code>.</p></div></article>
+          <article><strong>2</strong><div><h3>Create the agent</h3><p>For Codex, use allowed model <code>openai/gpt-5.6-sol</code>. A reasonable starting policy is <code>$5/day</code> and <code>$0.25/request</code>.</p></div></article>
           <article><strong>3</strong><div><h3>Copy the token once</h3><p>After creation, Guard shows a value beginning with <code>og_agent_</code>. Keep that window open until the next step succeeds.</p></div></article>
         </div>
         <a class="button" href="/dashboard/">Open operator console</a>
@@ -127,7 +127,7 @@ fi</code></pre>
         <div class="expected-output"><span>Expected header</span><code>model: gpt-5.6-sol</code></div>
         <p>Now type a normal request, for example:</p>
         <div class="request-card"><code>Review this project and explain how to run it.</code><code>Find and fix the failing tests.</code></div>
-        <p>Codex sends your request to Guard. Guard checks your identity, model, status, request ceiling, and daily budget before using Orbio.</p>
+        <p>Codex sends your request to Guard. Guard checks identity, model, status, and a catalog-priced worst-case request bound before forwarding to Orbio.</p>
       </section>
 
       <section class="guide-section" id="terminal-test">
