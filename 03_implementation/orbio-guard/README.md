@@ -210,4 +210,4 @@ The same release gate and Docker build pass in GitHub Actions.
   before a public Build Week submission.
 - The supplied deployment is localhost-oriented, not a public multi-tenant service.
 
-Current release candidate: `v0.1.0-rc.3`, prepared September 7, 2026.
+Current release candidate: `v0.1.0-rc.4`, prepared September 7, 2026.

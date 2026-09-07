@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.0-rc.4 - 2026-09-07
+
+### Added
+
+- Public Cloudflare Pages product site and synthetic dashboard at
+  `https://orbio-guard.pages.dev`.
+- Full Cloudflare Worker runtime with a SQLite-backed Durable Object for agents, policies,
+  UTC daily budgets, reservations, spend reconciliation, and metadata-only activity.
+- Separate Access-protected operator and token-authenticated inference hostnames at
+  `guard.larkvine.org` and `api.guard.larkvine.org`.
+- Cloudflare-specific type checking, build scripts, deployment configuration, security
+  headers, and policy/cost unit coverage.
+
+### Verified
+
+- 61 automated tests, local and Worker type checking, production builds,
+  desktop/mobile Chromium rendering, and zero dependency vulnerabilities.
+- Cloudflare Access redirects unauthenticated operator requests and the Worker rejects
+  direct `workers.dev` bypass attempts.
+- A persistent agent completed live `openai/gpt-4o-mini` inference through the Worker and
+  Durable Object accounting path with HTTP 200.
+- The Orbio gateway key remains an encrypted Worker secret; bootstrap access was deleted.
+
 ## 0.1.0-rc.3 - 2026-09-07
 
 ### Added
