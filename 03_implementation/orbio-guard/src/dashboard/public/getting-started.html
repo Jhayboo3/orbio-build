@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Connect a terminal, application, or IDE to Orbio Guard." />
+    <meta name="description" content="A beginner-friendly guide to using Codex and developer tools through Orbio Guard." />
     <title>Developer Setup — Orbio Guard</title>
     <link rel="stylesheet" href="/assets/styles.css" />
     <script src="/assets/getting-started.js" defer></script>
@@ -16,76 +16,163 @@
         <span>Orbio Guard</span>
       </a>
       <nav class="nav-links" aria-label="Setup navigation">
-        <a href="#terminal">Terminal</a>
-        <a href="#ides">IDEs</a>
+        <a href="#codex-setup">Codex setup</a>
+        <a href="#other-tools">Other tools</a>
         <a class="button button-small" href="/dashboard/">Operator console</a>
       </nav>
     </header>
 
     <main class="guide shell">
       <section class="guide-hero">
-        <p class="eyebrow">Developer onboarding</p>
-        <h1>From zero to a guarded request.</h1>
+        <p class="eyebrow">Start here · about five minutes</p>
+        <h1>Use AI through Guard.</h1>
         <p>
-          You do not need an Orbio account key. You need one Guard agent token from your
-          operator, an allowed model, and the Guard API URL.
+          Follow these steps in order. You will create one controlled identity, save its
+          token safely, connect Codex, and send your first request.
         </p>
         <div class="guide-callout">
-          <strong>Never ask for or paste the shared Orbio gateway key.</strong>
-          <span>Your credential begins with <code>og_agent_</code>, not <code>sk-orbio-</code>.</span>
+          <strong>You never need the shared Orbio key.</strong>
+          <span>Your personal Guard token starts with <code>og_agent_</code>. If you paste it into chat, a screenshot, or a public place, disable it and create another one.</span>
         </div>
       </section>
 
-      <section class="guide-section" id="request-access">
-        <div class="guide-heading"><span>01</span><div><p class="eyebrow">Request access</p><h2>Ask for one controlled identity.</h2></div></div>
-        <p>Send your Guard operator these four details:</p>
-        <div class="request-card">
-          <code>Project: customer-support</code>
-          <code>Models: openai/gpt-5.6-sol</code>
-          <code>Daily budget: $2.00</code>
-          <code>Maximum per request: $0.10</code>
+      <section class="guide-section" id="before-you-start">
+        <div class="guide-heading"><span>01</span><div><p class="eyebrow">Before you start</p><h2>Get your personal agent.</h2></div></div>
+        <div class="human-steps">
+          <article><strong>1</strong><div><h3>Ask your operator</h3><p>Tell them your project, model, daily budget, and request limit. If you are the operator, open the operator console.</p></div></article>
+          <article><strong>2</strong><div><h3>Create the agent</h3><p>For Codex, use allowed model <code>openai/gpt-5.6-sol</code>. A reasonable starting policy is <code>$5/day</code> and <code>$0.50/request</code>.</p></div></article>
+          <article><strong>3</strong><div><h3>Copy the token once</h3><p>After creation, Guard shows a value beginning with <code>og_agent_</code>. Keep that window open until the next step succeeds.</p></div></article>
         </div>
-        <p>The operator creates the agent in the dashboard and sends its token once. Store it immediately in your password manager or development secret store.</p>
-        <p>Model availability changes. After receiving a token, list Orbio's current models with:</p>
-        <pre><code>curl https://api.guard.larkvine.org/v1/models \
-  -H "Authorization: Bearer $ORBIO_GUARD_AGENT_TOKEN"</code></pre>
+        <a class="button" href="/dashboard/">Open operator console</a>
       </section>
 
-      <section class="guide-section" id="terminal">
-        <div class="guide-heading"><span>02</span><div><p class="eyebrow">Terminal check</p><h2>Prove the connection first.</h2></div></div>
-        <p>macOS or Linux:</p>
-        <pre><code>export ORBIO_GUARD_AGENT_TOKEN="og_agent_..."
+      <section class="guide-section" id="save-token">
+        <div class="guide-heading"><span>02</span><div><p class="eyebrow">macOS</p><h2>Save the token safely.</h2></div></div>
+        <p>Copy this command exactly. Do not add the token to the command.</p>
+        <pre><code>security add-generic-password -U \
+  -a "$USER" \
+  -s "orbio-guard-codex" \
+  -w</code></pre>
+        <div class="prompt-example">
+          <strong>What happens next</strong>
+          <p>Terminal waits for a password. Paste the complete <code>og_agent_...</code> token, then press Return. The token may remain invisible while you paste. That is normal.</p>
+        </div>
+        <p>Now verify that Keychain has the item. This command does not print the token:</p>
+        <pre><code>security find-generic-password \
+  -a "$USER" \
+  -s "orbio-guard-codex" \
+  &gt;/dev/null &amp;&amp; echo "Guard token saved"</code></pre>
+        <div class="expected-output"><span>Expected output</span><code>Guard token saved</code></div>
+        <div class="mistake-box">
+          <strong>Do not type this</strong>
+          <code>security add-generic-password -U \og_agent_...</code>
+          <p><code>-U</code> means “update if this item exists.” The token belongs at the hidden prompt after the command, not after <code>-U</code>.</p>
+        </div>
+      </section>
 
-curl https://api.guard.larkvine.org/v1/chat/completions \
+      <section class="guide-section" id="codex-setup">
+        <div class="guide-heading"><span>03</span><div><p class="eyebrow">Codex configuration</p><h2>Point Codex at Guard.</h2></div></div>
+        <p>Open the Codex configuration file:</p>
+        <pre><code>mkdir -p ~/.codex
+nano ~/.codex/config.toml</code></pre>
+        <p>Add the following configuration. If the file already has top-level <code>model</code> or <code>model_provider</code> lines, replace those lines instead of adding duplicates.</p>
+        <pre><code>model = "gpt-5.6-sol"
+model_provider = "orbio_guard"
+
+[model_providers.orbio_guard]
+name = "Orbio Guard"
+base_url = "https://api.guard.larkvine.org/v1"
+env_key = "ORBIO_GUARD_AGENT_TOKEN"
+env_key_instructions = "Use your Guard agent token, not the Orbio key."
+wire_api = "responses"
+requires_openai_auth = false
+supports_websockets = false</code></pre>
+        <div class="prompt-example">
+          <strong>Save in nano</strong>
+          <p>Press <code>Control+O</code>, press Return to confirm the filename, then press <code>Control+X</code>.</p>
+        </div>
+        <p>Codex uses the metadata name <code>gpt-5.6-sol</code>. Guard safely maps it to Orbio's <code>openai/gpt-5.6-sol</code> model ID.</p>
+      </section>
+
+      <section class="guide-section" id="load-token">
+        <div class="guide-heading"><span>04</span><div><p class="eyebrow">Every new terminal</p><h2>Load the saved token.</h2></div></div>
+        <p>Run this before starting Codex:</p>
+        <pre><code>export ORBIO_GUARD_AGENT_TOKEN="$(
+  security find-generic-password \
+    -a "$USER" \
+    -s "orbio-guard-codex" \
+    -w
+)"</code></pre>
+        <p>Check that the variable exists without revealing it:</p>
+        <pre><code>if [ -n "$ORBIO_GUARD_AGENT_TOKEN" ]; then
+  echo "Guard token loaded"
+else
+  echo "Guard token missing"
+fi</code></pre>
+        <div class="expected-output"><span>Expected output</span><code>Guard token loaded</code></div>
+      </section>
+
+      <section class="guide-section" id="verify-codex">
+        <div class="guide-heading"><span>05</span><div><p class="eyebrow">Check before launch</p><h2>Ask Codex Doctor.</h2></div></div>
+        <pre><code>codex --strict-config doctor --summary</code></pre>
+        <p>Look at the bottom of the report.</p>
+        <div class="expected-output"><span>Expected result</span><code>22 ok · 0 warn · 0 fail</code></div>
+        <p>The Configuration section should show provider <code>orbio_guard</code>. If it shows <code>openrouter</code>, return to step 3 and replace the top-level provider setting.</p>
+      </section>
+
+      <section class="guide-section" id="start-codex">
+        <div class="guide-heading"><span>06</span><div><p class="eyebrow">Start working</p><h2>Launch Codex normally.</h2></div></div>
+        <pre><code>codex</code></pre>
+        <p>The Codex header should show:</p>
+        <div class="expected-output"><span>Expected header</span><code>model: gpt-5.6-sol</code></div>
+        <p>Now type a normal request, for example:</p>
+        <div class="request-card"><code>Review this project and explain how to run it.</code><code>Find and fix the failing tests.</code></div>
+        <p>Codex sends your request to Guard. Guard checks your identity, model, status, request ceiling, and daily budget before using Orbio.</p>
+      </section>
+
+      <section class="guide-section" id="terminal-test">
+        <div class="guide-heading"><span>07</span><div><p class="eyebrow">Optional terminal test</p><h2>Test without Codex.</h2></div></div>
+        <p>After loading the token in step 4, run:</p>
+        <pre><code>curl https://api.guard.larkvine.org/v1/chat/completions \
   -H "Authorization: Bearer $ORBIO_GUARD_AGENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "openai/gpt-5.6-sol",
     "messages": [{"role": "user", "content": "Reply with: connected"}]
   }'</code></pre>
-        <p>Windows PowerShell:</p>
-        <pre><code>$env:ORBIO_GUARD_AGENT_TOKEN = "og_agent_..."
-
-$headers = @{
-  Authorization = "Bearer $env:ORBIO_GUARD_AGENT_TOKEN"
-  "Content-Type" = "application/json"
-}
-$body = @{
-  model = "openai/gpt-5.6-sol"
-  messages = @(@{ role = "user"; content = "Reply with: connected" })
-} | ConvertTo-Json -Depth 4
-
-Invoke-RestMethod -Method Post `
-  -Uri "https://api.guard.larkvine.org/v1/chat/completions" `
-  -Headers $headers -Body $body</code></pre>
-        <p>A successful response proves your token, model policy, budget, Guard, and Orbio route all work.</p>
+        <p>A JSON response containing <code>"content":"connected"</code> means the complete Guard and Orbio path works.</p>
+        <p>To see currently available Orbio models:</p>
+        <pre><code>curl https://api.guard.larkvine.org/v1/models \
+  -H "Authorization: Bearer $ORBIO_GUARD_AGENT_TOKEN"</code></pre>
       </section>
 
-      <section class="guide-section" id="application">
-        <div class="guide-heading"><span>03</span><div><p class="eyebrow">Application code</p><h2>Change the base URL, not your workflow.</h2></div></div>
+      <section class="guide-section" id="other-systems">
+        <div class="guide-heading"><span>08</span><div><p class="eyebrow">Linux and Windows</p><h2>Use a session variable.</h2></div></div>
         <div class="guide-grid">
           <article>
-            <h3>JavaScript / TypeScript</h3>
+            <h3>Linux shell</h3>
+            <p>This reads the token without displaying it, then exports it for the current terminal:</p>
+            <pre><code>read -rsp "Paste Guard token: " ORBIO_GUARD_AGENT_TOKEN
+echo
+export ORBIO_GUARD_AGENT_TOKEN
+codex</code></pre>
+          </article>
+          <article>
+            <h3>Windows PowerShell</h3>
+            <p>For the current PowerShell window:</p>
+            <pre><code>$secure = Read-Host "Paste Guard token" -AsSecureString
+$pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+$env:ORBIO_GUARD_AGENT_TOKEN = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer)
+codex</code></pre>
+          </article>
+        </div>
+      </section>
+
+      <section class="guide-section" id="other-tools">
+        <div class="guide-heading"><span>09</span><div><p class="eyebrow">Apps and IDEs</p><h2>Use the same token elsewhere.</h2></div></div>
+        <div class="tool-grid">
+          <article>
+            <span>JavaScript / TypeScript</span><h3>OpenAI SDK</h3>
             <pre><code>import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -99,7 +186,7 @@ const result = await client.chat.completions.create({
 });</code></pre>
           </article>
           <article>
-            <h3>Python</h3>
+            <span>Python</span><h3>OpenAI SDK</h3>
             <pre><code>import os
 from openai import OpenAI
 
@@ -113,79 +200,44 @@ result = client.chat.completions.create(
     messages=[{"role": "user", "content": "Hello"}],
 )</code></pre>
           </article>
-        </div>
-        <div class="guide-callout">
-          <strong>Keep tokens outside source control.</strong>
-          <span>Add <code>.env</code> to <code>.gitignore</code>, use your deployment platform's secret manager in production, and never put a token in frontend browser code.</span>
-        </div>
-      </section>
-
-      <section class="guide-section" id="ides">
-        <div class="guide-heading"><span>04</span><div><p class="eyebrow">IDEs and agent tools</p><h2>Launch the tool with Guard configured.</h2></div></div>
-        <div class="tool-grid">
-          <article id="codex">
-            <span>Codex</span><h3>Use the Responses API.</h3>
-            <p>Export the token, then add this to <code>~/.codex/config.toml</code>:</p>
-            <pre><code>model = "gpt-5.6-sol"
-model_provider = "orbio_guard"
-
-[model_providers.orbio_guard]
-name = "Orbio Guard"
-base_url = "https://api.guard.larkvine.org/v1"
-env_key = "ORBIO_GUARD_AGENT_TOKEN"
-wire_api = "responses"
-requires_openai_auth = false
-supports_websockets = false</code></pre>
-            <p>Codex uses its metadata slug <code>gpt-5.6-sol</code>. Guard maps it to Orbio's provider-qualified <code>openai/gpt-5.6-sol</code> ID and translates Responses requests, including function tools, to Chat Completions.</p>
-          </article>
-          <article id="claude">
-            <span>Claude Code</span><h3>Use the Messages API.</h3>
-            <pre><code>export ORBIO_GUARD_AGENT_TOKEN="og_agent_..."
-export ANTHROPIC_BASE_URL="https://api.guard.larkvine.org"
+          <article>
+            <span>Claude Code</span><h3>Anthropic Messages</h3>
+            <pre><code>export ANTHROPIC_BASE_URL="https://api.guard.larkvine.org"
 export ANTHROPIC_AUTH_TOKEN="$ORBIO_GUARD_AGENT_TOKEN"
 export ANTHROPIC_MODEL="anthropic/claude-sonnet-5"
-
 claude</code></pre>
           </article>
-          <article id="cursor">
-            <span>Cursor</span><h3>Use a custom OpenAI provider when available.</h3>
-            <ol>
-              <li>Open Cursor Settings → Models.</li>
-              <li>Enable the OpenAI-compatible or custom provider.</li>
-              <li>Base URL: <code>https://api.guard.larkvine.org/v1</code></li>
-              <li>API key: your <code>og_agent_...</code> token.</li>
-              <li>Model: one allowed by your policy.</li>
-            </ol>
-            <p>If your Cursor version does not expose a base URL, use Codex, Claude Code, or your application SDK.</p>
+          <article>
+            <span>VS Code / JetBrains</span><h3>Integrated terminal</h3>
+            <ol><li>Open the project.</li><li>Open the IDE terminal.</li><li>Load the token using step 4.</li><li>Run <code>codex</code>, <code>claude</code>, or your app there.</li></ol>
+            <p>Never commit a workspace file containing the token.</p>
           </article>
-          <article id="editors">
-            <span>VS Code / JetBrains</span><h3>Use the integrated terminal.</h3>
-            <ol>
-              <li>Open the project in your IDE.</li>
-              <li>Open its integrated terminal.</li>
-              <li>Export <code>ORBIO_GUARD_AGENT_TOKEN</code>.</li>
-              <li>Run your app, Codex, or Claude Code from that terminal.</li>
-            </ol>
-            <p>For run configurations, add the token as a local environment variable. Do not commit workspace settings containing it.</p>
+          <article>
+            <span>Cursor</span><h3>Custom provider</h3>
+            <ol><li>Open Settings → Models.</li><li>Choose an OpenAI-compatible provider.</li><li>Base URL: <code>https://api.guard.larkvine.org/v1</code></li><li>API key: your <code>og_agent_...</code> token.</li><li>Model: <code>openai/gpt-5.6-sol</code></li></ol>
+            <p>If your Cursor version has no base URL setting, use its terminal to run Codex or Claude Code.</p>
           </article>
         </div>
       </section>
 
       <section class="guide-section" id="errors">
-        <div class="guide-heading"><span>05</span><div><p class="eyebrow">Understand errors</p><h2>Guard failures are actionable.</h2></div></div>
+        <div class="guide-heading"><span>10</span><div><p class="eyebrow">Fix common mistakes</p><h2>Read the error literally.</h2></div></div>
         <dl class="error-guide">
-          <div><dt>401 INVALID_AGENT_TOKEN</dt><dd>The token is missing, mistyped, disabled, or no longer valid. Ask the operator for a new identity.</dd></div>
-          <div><dt>403 MODEL_NOT_ALLOWED</dt><dd>Choose an allowed model or ask the operator to change the policy.</dd></div>
-          <div><dt>403 AGENT_PAUSED / AGENT_DISABLED</dt><dd>The operator stopped this identity. Do not bypass Guard; contact them.</dd></div>
-          <div><dt>429 REQUEST_LIMIT_EXCEEDED</dt><dd>The request ceiling is lower than Guard's reservation. Ask for an appropriate ceiling.</dd></div>
-          <div><dt>429 DAILY_BUDGET_EXCEEDED</dt><dd>The agent used its UTC daily allowance. Wait for rollover or request a policy change.</dd></div>
+          <div><dt>Keychain item not found</dt><dd>Step 2 did not finish. Run the save command again, wait for the hidden password prompt, paste the token, press Return, and run the verification command.</dd></div>
+          <div><dt>security command shows Usage</dt><dd>The command was malformed. Copy the step 2 command exactly. Do not place the token after <code>-U</code>.</dd></div>
+          <div><dt>Codex uses openrouter.ai</dt><dd>Your top-level <code>model_provider</code> is still <code>openrouter</code>. Replace it with <code>orbio_guard</code> in <code>~/.codex/config.toml</code>.</dd></div>
+          <div><dt>Model metadata not found</dt><dd>Codex was given a provider-qualified model. Use <code>gpt-5.6-sol</code> in Codex config; Guard maps it to <code>openai/gpt-5.6-sol</code>.</dd></div>
+          <div><dt>401 INVALID_AGENT_TOKEN</dt><dd>The token is missing, mistyped, or invalid. Load it again. If it was exposed, disable that agent and create another.</dd></div>
+          <div><dt>403 MODEL_NOT_ALLOWED</dt><dd>The agent policy does not allow that model. Choose an allowed model or ask the operator to update the identity.</dd></div>
+          <div><dt>403 AGENT_PAUSED / AGENT_DISABLED</dt><dd>The operator stopped this identity. Contact the operator; do not bypass Guard.</dd></div>
+          <div><dt>429 limit or budget error</dt><dd>The request or daily allowance is exhausted. Ask the operator for an appropriate policy change.</dd></div>
         </dl>
       </section>
 
       <section class="guide-finish">
-        <p class="eyebrow">Ready</p>
-        <h2>One token. One policy. No shared key.</h2>
-        <p>Use the Guard URL anywhere an OpenAI-compatible base URL is accepted.</p>
+        <p class="eyebrow">The whole idea</p>
+        <h2>Save token. Load token. Start Codex.</h2>
+        <p>Guard handles the Orbio key, policy, budget, forwarding, and spend accounting.</p>
       </section>
     </main>
   </body>

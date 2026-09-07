@@ -88,7 +88,7 @@ try {
     }
 
     await page.goto(`${baseUrl}/getting-started`, { waitUntil: "networkidle" });
-    if ((await page.locator("h1").textContent())?.includes("guarded request") !== true) {
+    if ((await page.locator("h1").textContent())?.includes("Use AI through Guard") !== true) {
       throw new Error("Developer setup heading did not render.");
     }
     if ((await page.evaluate(() => document.documentElement.scrollWidth)) > viewport.width) {

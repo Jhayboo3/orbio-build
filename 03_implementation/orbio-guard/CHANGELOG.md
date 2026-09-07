@@ -18,6 +18,8 @@
   function tools, tool outputs, usage, and provider-cost reconciliation.
 - Authenticated Orbio model-catalog proxying and native Codex-slug normalization to
   provider-qualified Orbio model IDs.
+- Beginner-first onboarding rewritten as a literal save, verify, configure, load, doctor,
+  and launch checklist, with expected output and fixes for observed Keychain/Codex errors.
 
 ### Verified
 
