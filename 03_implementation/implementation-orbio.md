@@ -55,7 +55,7 @@ and release criteria.
 - **Submission materials prepared:** synthetic desktop/mobile screenshots, architecture
   diagrams, timed pitch and technical scripts, troubleshooting, security, deployment,
   and final submission guides are complete.
-- **Release candidate:** `v0.1.0-rc.4` prepared on September 7, 2026.
+- **Release candidate:** `v0.1.0-rc.5` prepared on September 7, 2026.
 
 ## 1. MVP outcome
 
