@@ -2,6 +2,7 @@ export type CloudAgentStatus = "active" | "paused" | "disabled";
 
 export interface CloudAgent {
   allowedModels: string[];
+  archivedAt?: string | null;
   createdAt: string;
   dailyBudgetMicroUsd: string;
   id: string;
@@ -11,6 +12,16 @@ export interface CloudAgent {
   status: CloudAgentStatus;
   tokenHash: string;
   updatedAt: string;
+}
+
+export function activeCloudAgents(agents: CloudAgent[]): CloudAgent[] {
+  return agents.filter((agent) => !agent.archivedAt);
+}
+
+export function latestCloudKeyUse(
+  events: Array<{ timestamp: string; type: string }>,
+): string | null {
+  return events.find((event) => event.type === "SPEND_CONFIRMED")?.timestamp ?? null;
 }
 
 export function matchesCloudModel(pattern: string, model: string): boolean {

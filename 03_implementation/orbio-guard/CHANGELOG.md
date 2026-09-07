@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Access-protected cloud operator controls for creating, pausing, resuming, disabling,
+  and archiving Guard agents.
+- One-time token presentation, activity filters, explicit reservation-ceiling labels,
+  inference endpoint visibility, and cloud environment status.
+- Same-origin validation for cloud admin mutations and derived key last-used status from
+  confirmed inference spend.
+
+### Verified
+
+- 63 automated tests and desktop/mobile cloud-console rendering.
+- Two disabled smoke identities archived while preserving their metadata-only history.
+
 ## 0.1.0-rc.4 - 2026-09-07
 
 ### Added

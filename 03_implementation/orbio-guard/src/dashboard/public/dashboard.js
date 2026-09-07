@@ -4,22 +4,32 @@ const elements = {
   agentsBadge: document.querySelector("#agents-badge"),
   agentCount: document.querySelector("#agent-count"),
   agentDetail: document.querySelector("#agent-detail"),
+  agentForm: document.querySelector("#agent-form"),
+  agentFilter: document.querySelector("#activity-agent-filter"),
   balance: document.querySelector("#balance-usd"),
   confirmed: document.querySelector("#confirmed-today"),
+  copyToken: document.querySelector("#copy-token"),
+  createdToken: document.querySelector("#created-token"),
+  environmentBadge: document.querySelector("#environment-badge"),
+  eventFilter: document.querySelector("#activity-event-filter"),
+  formStatus: document.querySelector("#form-status"),
   keyDetail: document.querySelector("#key-detail"),
   keyFingerprint: document.querySelector("#key-fingerprint"),
   keyLastUsed: document.querySelector("#key-last-used"),
   keyLocal: document.querySelector("#key-local"),
   keyRemote: document.querySelector("#key-remote"),
   keyState: document.querySelector("#key-state"),
+  operatorPanel: document.querySelector("#operator-panel"),
   reserved: document.querySelector("#reserved-today"),
   systemLabel: document.querySelector("#system-label"),
+  tokenDialog: document.querySelector("#token-dialog"),
   updatedAt: document.querySelector("#updated-at"),
   wallet: document.querySelector("#wallet-label"),
 };
 
 let remoteSnapshot = null;
 let remoteKeySnapshot = null;
+let currentSnapshot = null;
 
 async function loadDashboard(includeRemote) {
   try {
@@ -45,6 +55,10 @@ async function loadDashboard(includeRemote) {
 }
 
 function render(snapshot) {
+  currentSnapshot = snapshot;
+  const cloud = snapshot.deployment === "cloudflare";
+  elements.operatorPanel.hidden = !cloud;
+  elements.environmentBadge.textContent = cloud ? "Live Cloudflare" : snapshot.mode === "demo" ? "Demo" : "Local runtime";
   elements.systemLabel.textContent =
     snapshot.mode === "demo"
       ? "Demo mode · mock upstream"
@@ -85,13 +99,14 @@ function render(snapshot) {
     : "Never";
   elements.keyFingerprint.textContent = snapshot.key.fingerprint || "—";
   renderAgents(snapshot.agents);
-  renderActivity(snapshot.activity);
+  updateActivityFilters(snapshot);
+  renderActivity(filteredActivity(snapshot.activity));
 }
 
 function renderAgents(agents) {
   elements.agentsBadge.textContent = `${agents.length} configured`;
   if (!agents.length) {
-    elements.agents.innerHTML = '<tr><td colspan="4" class="empty-state">No Guard agents configured.</td></tr>';
+    elements.agents.innerHTML = '<tr><td colspan="5" class="empty-state">No Guard agents configured.</td></tr>';
     return;
   }
   elements.agents.innerHTML = agents
@@ -105,6 +120,7 @@ function renderAgents(agents) {
             <div class="budget-line"><span>${money(agent.confirmedUsd)}</span><span>${money(agent.dailyBudgetUsd)}</span></div>
             <progress class="progress" max="100" value="${agent.budgetPercent}" aria-label="${agent.budgetPercent}% of budget used"></progress>
           </td>
+          <td data-label="Controls">${agentControls(agent)}</td>
         </tr>`,
     )
     .join("");
@@ -117,7 +133,10 @@ function renderActivity(activity) {
   }
   elements.activity.innerHTML = activity
     .map((event) => {
-      const detail = [event.model, event.reasonCode, event.amountMicroUsd ? money(Number(event.amountMicroUsd) / 1_000_000) : null]
+      const amount = event.amountMicroUsd
+        ? `${event.type === "BUDGET_RESERVED" || event.type === "REQUEST_ALLOWED" ? "Reserved ceiling " : ""}${money(Number(event.amountMicroUsd) / 1_000_000)}`
+        : null;
+      const detail = [event.model, event.reasonCode, amount]
         .filter(Boolean)
         .join(" · ");
       return `<li class="activity-item">
@@ -134,7 +153,107 @@ function eventIcon(type) {
   if (type.includes("SPEND") || type.includes("BUDGET")) return "$";
   if (type.includes("BLOCKED") || type.includes("ERROR")) return "!";
   if (type.includes("AGENT")) return "A";
+  if (type === "REQUEST_ALLOWED") return "✓";
   return "·";
+}
+
+function agentControls(agent) {
+  if (!currentSnapshot || currentSnapshot.deployment !== "cloudflare") return "";
+  const statusAction = agent.status === "active"
+    ? '<button data-agent-action="paused">Pause</button>'
+    : agent.status === "paused"
+      ? '<button data-agent-action="active">Resume</button>'
+      : "";
+  const disable = agent.status !== "disabled"
+    ? '<button class="danger-action" data-agent-action="disabled">Disable</button>'
+    : '<button data-agent-action="archive">Archive</button>';
+  return `<div class="agent-actions" data-agent-id="${escapeHtml(agent.id)}">${statusAction}${disable}</div>`;
+}
+
+function updateActivityFilters(snapshot) {
+  const selectedAgent = elements.agentFilter.value;
+  const selectedEvent = elements.eventFilter.value;
+  const agentNames = new Map(snapshot.agents.map((agent) => [agent.id, agent.name]));
+  elements.agentFilter.innerHTML = '<option value="">All agents</option>' + [...agentNames]
+    .map(([id, name]) => `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`)
+    .join("");
+  const eventTypes = [...new Set(snapshot.activity.map((event) => event.type))].sort();
+  elements.eventFilter.innerHTML = '<option value="">All events</option>' + eventTypes
+    .map((type) => `<option value="${escapeHtml(type)}">${escapeHtml(eventLabel(type))}</option>`)
+    .join("");
+  elements.agentFilter.value = agentNames.has(selectedAgent) ? selectedAgent : "";
+  elements.eventFilter.value = eventTypes.includes(selectedEvent) ? selectedEvent : "";
+}
+
+function filteredActivity(activity) {
+  return activity.filter((event) =>
+    (!elements.agentFilter.value || event.agentId === elements.agentFilter.value) &&
+    (!elements.eventFilter.value || event.type === elements.eventFilter.value));
+}
+
+async function createAgent(event) {
+  event.preventDefault();
+  elements.formStatus.textContent = "Creating…";
+  const form = new FormData(elements.agentForm);
+  try {
+    const response = await adminRequest("/api/admin/agents", {
+      body: JSON.stringify({
+        allowedModels: String(form.get("models") || "").split(",").map((value) => value.trim()).filter(Boolean),
+        dailyBudgetMicroUsd: usdToMicro(String(form.get("dailyBudgetUsd") || "")),
+        maxRequestMicroUsd: usdToMicro(String(form.get("maxRequestUsd") || "")),
+        name: String(form.get("name") || ""),
+        project: String(form.get("project") || ""),
+      }),
+      method: "POST",
+    });
+    elements.createdToken.textContent = response.token;
+    elements.tokenDialog.showModal();
+    elements.agentForm.reset();
+    elements.formStatus.textContent = `${response.agent.name} created.`;
+    await loadDashboard(false);
+  } catch (error) {
+    elements.formStatus.textContent = error.message;
+  }
+}
+
+async function controlAgent(event) {
+  const button = event.target.closest("button[data-agent-action]");
+  if (!button) return;
+  const container = button.closest("[data-agent-id]");
+  const agentId = container?.dataset.agentId;
+  const action = button.dataset.agentAction;
+  if (!agentId || !action) return;
+  button.disabled = true;
+  try {
+    if (action === "archive") {
+      await adminRequest(`/api/admin/agents/${encodeURIComponent(agentId)}/archive`, { method: "PUT" });
+    } else {
+      await adminRequest(`/api/admin/agents/${encodeURIComponent(agentId)}/status`, {
+        body: JSON.stringify({ status: action }),
+        method: "PUT",
+      });
+    }
+    await loadDashboard(false);
+  } catch (error) {
+    elements.formStatus.textContent = error.message;
+    button.disabled = false;
+  }
+}
+
+async function adminRequest(path, options) {
+  const response = await fetch(path, {
+    ...options,
+    headers: { "content-type": "application/json" },
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error?.message || `Request failed with ${response.status}.`);
+  return body;
+}
+
+function usdToMicro(value) {
+  const match = value.trim().match(/^(\d+)(?:\.(\d{1,6}))?$/);
+  if (!match) throw new Error("USD values need up to six decimal places.");
+  return (BigInt(match[1]) * 1_000_000n + BigInt((match[2] || "").padEnd(6, "0"))).toString();
 }
 
 function eventLabel(type) {
@@ -171,5 +290,13 @@ function escapeHtml(value) {
 }
 
 loadDashboard(true);
+elements.agentForm?.addEventListener("submit", createAgent);
+elements.agents?.addEventListener("click", controlAgent);
+elements.agentFilter?.addEventListener("change", () => renderActivity(filteredActivity(currentSnapshot?.activity || [])));
+elements.eventFilter?.addEventListener("change", () => renderActivity(filteredActivity(currentSnapshot?.activity || [])));
+elements.copyToken?.addEventListener("click", async () => {
+  await navigator.clipboard.writeText(elements.createdToken.textContent || "");
+  elements.copyToken.textContent = "Copied";
+});
 setInterval(() => loadDashboard(false), 4_000);
 setInterval(() => loadDashboard(true), 60_000);

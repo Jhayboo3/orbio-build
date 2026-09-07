@@ -27,9 +27,29 @@
           <h1>Guard dashboard</h1>
         </div>
         <div class="updated-at">
+          <span class="environment-badge" id="environment-badge">Local runtime</span>
           <span>Last sync</span>
           <strong id="updated-at">—</strong>
         </div>
+      </section>
+
+      <section class="operator-panel" id="operator-panel" hidden>
+        <div class="operator-copy">
+          <p class="eyebrow">Cloud operator</p>
+          <h2>Issue a controlled identity.</h2>
+          <p>Tokens are shown once. The Durable Object stores only their SHA-256 hash.</p>
+          <code id="inference-endpoint">https://api.guard.larkvine.org/v1</code>
+        </div>
+        <form id="agent-form" class="agent-form">
+          <label>Name<input name="name" required maxlength="80" placeholder="Research agent" /></label>
+          <label>Project<input name="project" maxlength="80" placeholder="customer-insights" /></label>
+          <label>Daily budget (USD)<input name="dailyBudgetUsd" required inputmode="decimal" value="5.00" /></label>
+          <label>Per request (USD)<input name="maxRequestUsd" required inputmode="decimal" value="0.50" /></label>
+          <label class="form-wide">Allowed models<input name="models" required value="openai/*" aria-describedby="model-help" /></label>
+          <small class="form-wide" id="model-help">Comma-separated exact IDs or suffix wildcards.</small>
+          <button class="button form-submit" type="submit">Create agent</button>
+          <span class="form-status" id="form-status" role="status"></span>
+        </form>
       </section>
 
       <section class="metric-grid" aria-label="Account overview">
@@ -72,10 +92,11 @@
                   <th>Status</th>
                   <th>Models</th>
                   <th>Daily spend</th>
+                  <th class="agent-actions-heading">Controls</th>
                 </tr>
               </thead>
               <tbody id="agents-table">
-                <tr><td colspan="4" class="empty-state">Loading agents…</td></tr>
+                <tr><td colspan="5" class="empty-state">Loading agents…</td></tr>
               </tbody>
             </table>
           </div>
@@ -105,6 +126,10 @@
             </div>
             <span class="panel-count">No prompts stored</span>
           </div>
+          <div class="activity-filters" aria-label="Activity filters">
+            <label>Agent<select id="activity-agent-filter"><option value="">All agents</option></select></label>
+            <label>Event<select id="activity-event-filter"><option value="">All events</option></select></label>
+          </div>
           <ol class="activity-list" id="activity-list">
             <li class="empty-state">Loading activity…</li>
           </ol>
@@ -123,5 +148,18 @@
         </aside>
       </section>
     </main>
+
+    <dialog class="token-dialog" id="token-dialog">
+      <form method="dialog" class="token-card">
+        <p class="eyebrow">One-time credential</p>
+        <h2>Save this agent token now.</h2>
+        <p>It cannot be recovered. Only its hash has been stored.</p>
+        <code id="created-token"></code>
+        <div class="token-actions">
+          <button class="button" id="copy-token" type="button">Copy token</button>
+          <button class="text-button" value="close">I saved it</button>
+        </div>
+      </form>
+    </dialog>
   </body>
 </html>

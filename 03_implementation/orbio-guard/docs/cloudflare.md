@@ -48,6 +48,19 @@ operator authentication path.
 Create agents with `POST /api/admin/agents` after signing in through Access. The response
 contains the `og_agent_...` token once; only its SHA-256 hash is persisted.
 
+The live dashboard provides the same workflow without exposing a general-purpose admin
+token:
+
+- Create an agent with project, model patterns, daily budget, and request ceiling.
+- Copy the one-time token from the modal before closing it.
+- Pause, resume, or permanently disable an identity from its table row.
+- Archive disabled agents from the active roster while retaining their activity history.
+- Filter activity by visible agent or event type; reservation ceilings are labeled
+  separately from confirmed provider spend.
+
+Browser mutations require both a valid Access JWT and the exact
+`https://guard.larkvine.org` origin. The inference hostname never exposes these routes.
+
 The inference hostname is intentionally not behind interactive Access because SDKs send
 Guard bearer tokens rather than browser cookies. It exposes only `/healthz`, `/readyz`,
 and the three `/v1/*` proxy routes. Operator and dashboard APIs return `404` there.
@@ -67,6 +80,8 @@ The full runtime was deployed and live-tested on 2026-09-07:
   per request for `openai/*` and `anthropic/*`. Its one-time token is stored in macOS
   Keychain under service `orbio-guard-cloudflare-agent`; only its hash is in Durable
   Object state.
+- The two temporary smoke agents are archived from the active roster; their metadata-only
+  history remains available for audit.
 
 Nested custom-domain DNS may remain negatively cached by a workstation resolver shortly
 after first deployment. Cloudflare authoritative DNS and `1.1.1.1` should be used to

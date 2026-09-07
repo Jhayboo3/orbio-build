@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  activeCloudAgents,
   evaluateCloudPolicy,
   extractCloudCostMicroUsd,
   extractCloudStreamCostMicroUsd,
   formatCloudUsd,
+  latestCloudKeyUse,
   matchesCloudModel,
   type CloudAgent,
 } from "../../src/cloudflare/core.js";
@@ -41,5 +43,16 @@ describe("Cloudflare Guard core", () => {
   it("formats integer micro-dollars without floating point loss", () => {
     expect(formatCloudUsd("120000")).toBe("0.12");
     expect(formatCloudUsd("7000001")).toBe("7.000001");
+  });
+
+  it("excludes archived agents without deleting their records", () => {
+    expect(activeCloudAgents([agent, { ...agent, id: "archived", archivedAt: "2026-09-07T01:00:00.000Z" }])).toEqual([agent]);
+  });
+
+  it("derives key use from the latest confirmed spend", () => {
+    expect(latestCloudKeyUse([
+      { timestamp: "2026-09-07T02:00:00.000Z", type: "REQUEST_ALLOWED" },
+      { timestamp: "2026-09-07T01:00:00.000Z", type: "SPEND_CONFIRMED" },
+    ])).toBe("2026-09-07T01:00:00.000Z");
   });
 });

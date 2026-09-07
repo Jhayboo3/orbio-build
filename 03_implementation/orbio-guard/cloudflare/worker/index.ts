@@ -1,10 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import {
+  activeCloudAgents,
   evaluateCloudPolicy,
   extractCloudCostMicroUsd,
   extractCloudStreamCostMicroUsd,
   formatCloudUsd,
+  latestCloudKeyUse,
   validateCloudModelPatterns,
   type CloudAgent,
   type CloudAgentStatus,
@@ -93,6 +95,10 @@ export class GuardCoordinator extends DurableObject<Env> {
       if (statusMatch && request.method === "PUT") {
         const input = await request.json<{ status: CloudAgentStatus }>();
         return Response.json(await this.setStatus(statusMatch[1]!, input.status));
+      }
+      const archiveMatch = url.pathname.match(/^\/agents\/([^/]+)\/archive$/);
+      if (archiveMatch && request.method === "PUT") {
+        return Response.json(await this.archiveAgent(archiveMatch[1]!));
       }
       return guardError(404, "NOT_FOUND", "Coordinator endpoint not found.");
     } catch (error) {
@@ -233,6 +239,7 @@ export class GuardCoordinator extends DurableObject<Env> {
     const now = new Date().toISOString();
     const agent: CloudAgent = {
       allowedModels: [...new Set(allowedModels)],
+      archivedAt: null,
       createdAt: now,
       dailyBudgetMicroUsd: input.dailyBudgetMicroUsd,
       id: crypto.randomUUID(),
@@ -264,12 +271,26 @@ export class GuardCoordinator extends DurableObject<Env> {
     });
   }
 
+  private async archiveAgent(agentId: string) {
+    return this.update((state) => {
+      const agent = state.agents.find((candidate) => candidate.id === agentId);
+      if (!agent) throw new Error("Agent was not found.");
+      if (agent.status !== "disabled") {
+        throw new Error("Disable an agent before archiving it.");
+      }
+      agent.archivedAt = new Date().toISOString();
+      agent.updatedAt = agent.archivedAt;
+      appendEvent(state, { agentId, type: "AGENT_ARCHIVED" });
+      return safeAgent(agent);
+    });
+  }
+
   private async dashboard() {
     const state = await this.read();
     recoverStaleReservations(state);
     await this.ctx.storage.put("state", state);
     const date = utcDate();
-    const agents = state.agents.map((agent) => {
+    const agents = activeCloudAgents(state.agents).map((agent) => {
       const budget = state.budgets.find((entry) => entry.agentId === agent.id && entry.date === date);
       const confirmed = BigInt(budget?.confirmedMicroUsd ?? "0");
       const reserved = budget?.reservations.reduce(
@@ -289,11 +310,13 @@ export class GuardCoordinator extends DurableObject<Env> {
     const reserved = agents.reduce((total, agent) => total + Number(agent.reservedUsd), 0);
     return {
       activity: state.ledger.slice(-80).reverse(),
+      archivedAgentCount: state.agents.length - agents.length,
       agents,
       deployment: "cloudflare",
       generatedAt: new Date().toISOString(),
       mode: "live",
       remote: { balanceUsd: null, wallets: ["Orbio account · live inference"] },
+      remoteLastUsedAt: latestCloudKeyUse(state.ledger.slice().reverse()),
       summary: {
         activeAgents: agents.filter((agent) => agent.status === "active").length,
         confirmedTodayUsd: confirmed.toString(),
@@ -349,17 +372,33 @@ export default {
           ? (await sha256(env.ORBIO_GUARD_UPSTREAM_KEY)).slice(0, 12)
           : undefined,
         remoteHasKey: Boolean(env.ORBIO_GUARD_UPSTREAM_KEY),
+        remoteLastUsedAt: snapshot.remoteLastUsedAt,
         remotePrefix: "Cloudflare secret",
       };
       return json(snapshot);
     }
     if (url.pathname === "/api/admin/agents" && ["GET", "POST"].includes(request.method)) {
+      if (request.method !== "GET" && !sameOrigin(request, env)) {
+        return guardError(403, "INVALID_ORIGIN", "Admin mutations require the operator origin.");
+      }
       return coordinator.fetch(new Request(`https://guard.internal/agents`, request));
     }
     const statusMatch = url.pathname.match(/^\/api\/admin\/agents\/([^/]+)\/status$/);
     if (statusMatch && request.method === "PUT") {
+      if (!sameOrigin(request, env)) {
+        return guardError(403, "INVALID_ORIGIN", "Admin mutations require the operator origin.");
+      }
       return coordinator.fetch(
         new Request(`https://guard.internal/agents/${statusMatch[1]}/status`, request),
+      );
+    }
+    const archiveMatch = url.pathname.match(/^\/api\/admin\/agents\/([^/]+)\/archive$/);
+    if (archiveMatch && request.method === "PUT") {
+      if (!sameOrigin(request, env)) {
+        return guardError(403, "INVALID_ORIGIN", "Admin mutations require the operator origin.");
+      }
+      return coordinator.fetch(
+        new Request(`https://guard.internal/agents/${archiveMatch[1]}/archive`, request),
       );
     }
     if (url.pathname.startsWith("/api/")) {
@@ -611,6 +650,14 @@ function utcDate(): string {
 
 function trailingSlash(value: string): string {
   return value.endsWith("/") ? value : `${value}/`;
+}
+
+function sameOrigin(request: Request, env: Env): boolean {
+  const origin = request.headers.get("origin");
+  const bootstrap = request.headers.get("x-orbio-bootstrap-token");
+  return origin === "https://guard.larkvine.org" || Boolean(
+    env.BOOTSTRAP_TOKEN && bootstrap && safeEqual(env.BOOTSTRAP_TOKEN, bootstrap),
+  );
 }
 
 function json(value: unknown, status = 200): Response {
